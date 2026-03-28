@@ -40,6 +40,7 @@ const LEGACY_STORAGE_KEYS = [
   "tagalog_sprint_progress_v2",
   "tagalog_sprint_progress_v1"
 ];
+const SRS_INTERVAL_DAYS = [0, 1, 2, 4, 7, 14, 30, 60];
 
 const categorySelect = document.getElementById("categorySelect");
 const focusSelect = document.getElementById("focusSelect");
@@ -59,6 +60,8 @@ const nextBtn = document.getElementById("nextBtn");
 const xpValue = document.getElementById("xpValue");
 const streakValue = document.getElementById("streakValue");
 const accuracyValue = document.getElementById("accuracyValue");
+const dueValue = document.getElementById("dueValue");
+const masteredValue = document.getElementById("masteredValue");
 const modeButtons = Array.from(document.querySelectorAll(".mode-btn"));
 
 const progress = loadProgress();
@@ -342,6 +345,11 @@ function getFilteredItems() {
   const byCategory =
     state.category === "all" ? LESSON_ITEMS : LESSON_ITEMS.filter((item) => item.category === state.category);
 
+  if (state.focus === "due") {
+    const dueNow = byCategory.filter(isDueItem);
+    return dueNow.length ? dueNow : byCategory;
+  }
+
   if (state.focus === "new") {
     const onlyNew = byCategory.filter((item) => getItemStats(item).seen === 0);
     return onlyNew.length ? onlyNew : byCategory;
@@ -400,6 +408,10 @@ function getSmartWeight(item) {
   const attempts = stats.correct + stats.incorrect;
   let weight = 1;
 
+  if (isDueItem(item)) {
+    weight += 2.2;
+  }
+
   if (stats.seen === 0) {
     weight += 2.5;
   }
@@ -454,22 +466,40 @@ function buildMetaLabel(item) {
   const stats = getItemStats(item);
   const attempts = stats.correct + stats.incorrect;
   const mastery = attempts ? `${Math.round((stats.correct / attempts) * 100)}%` : "N/A";
-  return `Category: ${item.category} | Seen: ${stats.seen} | Mastery: ${mastery}`;
+  const dueLabel = stats.dueDate || "Today";
+  return `Category: ${item.category} | Seen: ${stats.seen} | Level: ${stats.level} | Due: ${dueLabel} | Mastery: ${mastery}`;
 }
 
 function getItemStats(item) {
   const key = itemKey(item);
   if (!progress.itemStats[key]) {
-    return { seen: 0, correct: 0, incorrect: 0 };
+    return { seen: 0, correct: 0, incorrect: 0, level: 0, dueDate: null };
   }
-  return progress.itemStats[key];
+  const entry = progress.itemStats[key];
+  return {
+    seen: Number(entry.seen) || 0,
+    correct: Number(entry.correct) || 0,
+    incorrect: Number(entry.incorrect) || 0,
+    level: Number(entry.level) || 0,
+    dueDate: entry.dueDate || null
+  };
 }
 
 function ensureItemStats(item) {
   const key = itemKey(item);
   if (!progress.itemStats[key]) {
-    progress.itemStats[key] = { seen: 0, correct: 0, incorrect: 0 };
+    progress.itemStats[key] = { seen: 0, correct: 0, incorrect: 0, level: 0, dueDate: null };
+    return progress.itemStats[key];
   }
+
+  const current = progress.itemStats[key];
+  progress.itemStats[key] = {
+    seen: Number(current.seen) || 0,
+    correct: Number(current.correct) || 0,
+    incorrect: Number(current.incorrect) || 0,
+    level: Number(current.level) || 0,
+    dueDate: current.dueDate || null
+  };
   return progress.itemStats[key];
 }
 
@@ -523,6 +553,7 @@ function addScore({ correct = 0, incorrect = 0, xp = 0, item = null, itemCorrect
     const stats = ensureItemStats(item);
     stats.correct += itemCorrect;
     stats.incorrect += itemIncorrect;
+    updateReviewSchedule(stats, itemCorrect, itemIncorrect);
   }
 
   persistProgress();
@@ -540,9 +571,13 @@ function addXp(amount) {
 function renderStats() {
   const attempts = progress.correct + progress.incorrect;
   const accuracy = attempts ? Math.round((progress.correct / attempts) * 100) : 0;
+  const dueCount = LESSON_ITEMS.filter(isDueItem).length;
+  const masteredCount = LESSON_ITEMS.filter(isMasteredItem).length;
   xpValue.textContent = progress.xp;
   streakValue.textContent = `${progress.streak} day${progress.streak === 1 ? "" : "s"}`;
   accuracyValue.textContent = `${accuracy}%`;
+  dueValue.textContent = String(dueCount);
+  masteredValue.textContent = String(masteredCount);
 }
 
 function updateStreak() {
@@ -600,7 +635,9 @@ function loadProgress() {
         itemStats[key] = {
           seen: Number(value.seen) || 0,
           correct: Number(value.correct) || 0,
-          incorrect: Number(value.incorrect) || 0
+          incorrect: Number(value.incorrect) || 0,
+          level: Number(value.level) || 0,
+          dueDate: value.dueDate || null
         };
       });
     }
@@ -650,4 +687,43 @@ function resetProgress() {
   setNextQuestion();
   feedbackLine.textContent = "Progress reset complete.";
   feedbackLine.className = "feedback-line";
+}
+
+function updateReviewSchedule(stats, itemCorrect, itemIncorrect) {
+  if (!itemCorrect && !itemIncorrect) {
+    return;
+  }
+
+  if (itemIncorrect > 0) {
+    stats.level = 0;
+  } else if (itemCorrect > 0) {
+    stats.level = Math.min(stats.level + 1, SRS_INTERVAL_DAYS.length - 1);
+  }
+
+  const offset = SRS_INTERVAL_DAYS[stats.level] ?? 0;
+  stats.dueDate = offsetDate(offset);
+}
+
+function isDueItem(item) {
+  const stats = getItemStats(item);
+  if (!stats.dueDate) {
+    return true;
+  }
+  return stats.dueDate <= getISODate(new Date());
+}
+
+function isMasteredItem(item) {
+  const stats = getItemStats(item);
+  const attempts = stats.correct + stats.incorrect;
+  if (attempts < 4 || stats.level < 4) {
+    return false;
+  }
+  return stats.correct / attempts >= 0.85;
+}
+
+function offsetDate(days) {
+  const base = new Date();
+  base.setHours(0, 0, 0, 0);
+  base.setDate(base.getDate() + days);
+  return getISODate(base);
 }

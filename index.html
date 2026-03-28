@@ -38,6 +38,14 @@
           <p class="label">Accuracy</p>
           <p id="accuracyValue" class="value">0%</p>
         </article>
+        <article class="stat-card">
+          <p class="label">Due Today</p>
+          <p id="dueValue" class="value">0</p>
+        </article>
+        <article class="stat-card">
+          <p class="label">Mastered</p>
+          <p id="masteredValue" class="value">0</p>
+        </article>
       </section>
 
       <section class="controls">
@@ -53,6 +61,7 @@
             <label for="focusSelect">Study Focus</label>
             <select id="focusSelect" aria-label="Choose study focus">
               <option value="smart">Smart Mix</option>
+              <option value="due">Due Today</option>
               <option value="new">New First</option>
               <option value="review">Review Weak Items</option>
             </select>
