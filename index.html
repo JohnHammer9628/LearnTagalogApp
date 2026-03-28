@@ -175,6 +175,35 @@
         </div>
       </section>
 
+      <section id="sessionSummary" class="session-summary" aria-live="polite">
+        <div class="session-summary-head">
+          <p class="session-summary-title">Session Summary</p>
+          <p id="sessionDurationValue" class="session-summary-duration">0 min</p>
+        </div>
+        <div class="session-summary-grid">
+          <article class="session-stat">
+            <p class="label">Attempts</p>
+            <p id="sessionAttemptsValue" class="value">0</p>
+          </article>
+          <article class="session-stat">
+            <p class="label">Accuracy</p>
+            <p id="sessionAccuracyValue" class="value">0%</p>
+          </article>
+          <article class="session-stat">
+            <p class="label">XP Delta</p>
+            <p id="sessionXpDeltaValue" class="value">+0</p>
+          </article>
+        </div>
+        <p class="session-summary-line"><strong>Weak Areas:</strong> <span id="sessionWeakAreasValue">None yet</span></p>
+        <p class="session-summary-line">
+          <strong>Recommended Focus:</strong> <span id="sessionRecommendationValue">Smart Mix</span>
+        </p>
+        <div class="session-summary-actions">
+          <button id="endSessionBtn" class="ghost" type="button">End Session</button>
+          <button id="startNewSessionBtn" class="ghost" type="button">Start New Session</button>
+        </div>
+      </section>
+
       <section class="custom-pack">
         <h3>Custom Word Pack</h3>
         <p class="custom-copy">Add your own words and phrases to practice alongside built-in lessons.</p>

@@ -109,6 +109,7 @@ const typingInput = document.getElementById("typingInput");
 const typingResultIcon = document.getElementById("typingResultIcon");
 const primaryActionBtn = document.getElementById("primaryActionBtn");
 const nextBtn = document.getElementById("nextBtn");
+const endSessionBtn = document.getElementById("endSessionBtn");
 const xpValue = document.getElementById("xpValue");
 const streakValue = document.getElementById("streakValue");
 const accuracyValue = document.getElementById("accuracyValue");
@@ -119,6 +120,14 @@ const goalStatusText = document.getElementById("goalStatusText");
 const reviewQueueCount = document.getElementById("reviewQueueCount");
 const ratingBar = document.getElementById("ratingBar");
 const ratingButtons = Array.from(document.querySelectorAll(".rating-btn"));
+const sessionSummary = document.getElementById("sessionSummary");
+const sessionDurationValue = document.getElementById("sessionDurationValue");
+const sessionAttemptsValue = document.getElementById("sessionAttemptsValue");
+const sessionAccuracyValue = document.getElementById("sessionAccuracyValue");
+const sessionXpDeltaValue = document.getElementById("sessionXpDeltaValue");
+const sessionWeakAreasValue = document.getElementById("sessionWeakAreasValue");
+const sessionRecommendationValue = document.getElementById("sessionRecommendationValue");
+const startNewSessionBtn = document.getElementById("startNewSessionBtn");
 const customWordForm = document.getElementById("customWordForm");
 const customEnglish = document.getElementById("customEnglish");
 const customTagalog = document.getElementById("customTagalog");
@@ -141,6 +150,8 @@ const state = {
   quizAnswered: false,
   seenTracked: false
 };
+
+let session = createEmptySession();
 
 init();
 
@@ -216,8 +227,10 @@ function bindEvents() {
 
   primaryActionBtn.addEventListener("click", handlePrimaryAction);
   nextBtn.addEventListener("click", setNextQuestion);
+  endSessionBtn.addEventListener("click", endSession);
   resetProgressBtn.addEventListener("click", resetProgress);
   pronounceBtn.addEventListener("click", speakCurrentTagalog);
+  startNewSessionBtn.addEventListener("click", startNewSession);
 
   typingForm.addEventListener("submit", (event) => {
     event.preventDefault();
@@ -258,6 +271,7 @@ function setNextQuestion() {
     clearTypingOutcome();
     hideCoachingCard();
     hideRatingBar();
+    setPrimaryActionVisible(false);
     pronounceBtn.disabled = true;
     return;
   }
@@ -281,6 +295,7 @@ function renderModeLayout() {
     return;
   }
 
+  setPrimaryActionVisible(true);
   const prompt = getPromptConfig(state.currentItem);
   clearTypingOutcome();
   quizOptions.innerHTML = "";
@@ -356,6 +371,7 @@ function handlePrimaryAction() {
     feedbackLine.className = "feedback-line";
     hideCoachingCard();
     showRatingBar();
+    setPrimaryActionVisible(false);
     return;
   }
 
@@ -369,6 +385,7 @@ function handlePrimaryAction() {
     disableQuizOptions();
     hideCoachingCard();
     showRatingBar();
+    setPrimaryActionVisible(false);
     return;
   }
 
@@ -378,6 +395,7 @@ function handlePrimaryAction() {
   feedbackLine.className = "feedback-line";
   hideCoachingCard();
   showRatingBar();
+  setPrimaryActionVisible(false);
 }
 
 function handleQuizAnswer(choice, answer, selectedButton) {
@@ -396,6 +414,7 @@ function handleQuizAnswer(choice, answer, selectedButton) {
   }
   revealCorrectQuizOption(answer);
   disableQuizOptions();
+  setPrimaryActionVisible(false);
 
   if (isCorrect) {
     removeFromReviewQueue(state.currentItem);
@@ -403,6 +422,7 @@ function handleQuizAnswer(choice, answer, selectedButton) {
     feedbackLine.textContent = "";
     hideCoachingCard();
     showRatingBar();
+    setPrimaryActionVisible(false);
     return;
   }
 
@@ -411,6 +431,7 @@ function handleQuizAnswer(choice, answer, selectedButton) {
   feedbackLine.textContent = "";
   showWrongAnswerCoaching(state.currentItem, prompt);
   showRatingBar();
+  setPrimaryActionVisible(false);
 }
 
 function handleTypingAnswer() {
@@ -436,6 +457,7 @@ function handleTypingAnswer() {
     feedbackLine.textContent = "";
     hideCoachingCard();
     showRatingBar();
+    setPrimaryActionVisible(false);
     return;
   }
 
@@ -445,6 +467,11 @@ function handleTypingAnswer() {
   feedbackLine.textContent = "";
   showWrongAnswerCoaching(state.currentItem, prompt);
   showRatingBar();
+  setPrimaryActionVisible(false);
+}
+
+function setPrimaryActionVisible(visible) {
+  primaryActionBtn.hidden = !visible;
 }
 
 function disableQuizOptions() {
@@ -833,11 +860,43 @@ function normalize(value) {
     .trim();
 }
 
+function createEmptySession() {
+  return {
+    startedAt: Date.now(),
+    correct: 0,
+    incorrect: 0,
+    xpDelta: 0,
+    categoryStats: {}
+  };
+}
+
+function trackSessionScore({ correct = 0, incorrect = 0, xp = 0, item = null, itemCorrect = 0, itemIncorrect = 0 }) {
+  session.correct += correct;
+  session.incorrect += incorrect;
+  session.xpDelta += xp;
+
+  if (!item || (!itemCorrect && !itemIncorrect)) {
+    return;
+  }
+
+  const category = item.category || "Custom";
+  if (!session.categoryStats[category]) {
+    session.categoryStats[category] = { correct: 0, incorrect: 0 };
+  }
+  session.categoryStats[category].correct += itemCorrect;
+  session.categoryStats[category].incorrect += itemIncorrect;
+}
+
+function trackSessionXp(amount) {
+  session.xpDelta += amount;
+}
+
 function addScore({ correct = 0, incorrect = 0, xp = 0, item = null, itemCorrect = 0, itemIncorrect = 0 }) {
   progress.correct += correct;
   progress.incorrect += incorrect;
   adjustXp(xp);
   updateStreak();
+  trackSessionScore({ correct, incorrect, xp, item, itemCorrect, itemIncorrect });
 
   if (item) {
     const stats = ensureItemStats(item);
@@ -855,6 +914,7 @@ function addScore({ correct = 0, incorrect = 0, xp = 0, item = null, itemCorrect
 function addXp(amount) {
   adjustXp(amount);
   updateStreak();
+  trackSessionXp(amount);
   persistProgress();
   renderStats();
 }
@@ -872,6 +932,7 @@ function renderStats() {
   renderGoalProgress();
   syncGoalButtons();
   renderReviewQueueCount();
+  renderSessionSummary();
 }
 
 function getGoalTarget() {
@@ -910,6 +971,73 @@ function renderReviewQueueCount() {
   }
   const count = Array.isArray(progress.reviewQueue) ? progress.reviewQueue.length : 0;
   reviewQueueCount.textContent = String(count);
+}
+
+function getSessionWeakAreas(limit = 3) {
+  const entries = Object.entries(session.categoryStats || {}).filter(([, stats]) => (stats.incorrect || 0) > 0);
+  entries.sort((a, b) => {
+    const incorrectDiff = (b[1].incorrect || 0) - (a[1].incorrect || 0);
+    if (incorrectDiff !== 0) {
+      return incorrectDiff;
+    }
+    return (a[1].correct || 0) - (b[1].correct || 0);
+  });
+  return entries.slice(0, limit).map(([category, stats]) => ({
+    category,
+    incorrect: stats.incorrect || 0,
+    correct: stats.correct || 0
+  }));
+}
+
+function getSessionRecommendation(attempts, accuracy, weakAreas) {
+  const dueCount = LESSON_ITEMS.filter(isDueItem).length;
+  if (dueCount >= 3) {
+    return "Due Only - clear your scheduled review cards.";
+  }
+  if (attempts >= 4 && accuracy < 70) {
+    return "Review Weak Items - tighten up recall before adding new cards.";
+  }
+  if (weakAreas.length > 0) {
+    return `Review Weak Items - focus on ${weakAreas[0].category} next.`;
+  }
+  if (attempts >= 6 && accuracy >= 85) {
+    return "New First - strong session, ready to add new material.";
+  }
+  return "Smart Mix - keep a balanced study rotation.";
+}
+
+function renderSessionSummary() {
+  if (!sessionSummary) {
+    return;
+  }
+  const attempts = session.correct + session.incorrect;
+  const accuracy = attempts ? Math.round((session.correct / attempts) * 100) : 0;
+  const weakAreas = getSessionWeakAreas();
+  const durationMins = Math.floor((Date.now() - session.startedAt) / (60 * 1000));
+  const xpDelta = session.xpDelta;
+  const xpLabel = `${xpDelta >= 0 ? "+" : ""}${xpDelta}`;
+
+  sessionDurationValue.textContent = durationMins > 0 ? `${durationMins} min` : "<1 min";
+  sessionAttemptsValue.textContent = String(attempts);
+  sessionAccuracyValue.textContent = `${accuracy}%`;
+  sessionXpDeltaValue.textContent = xpLabel;
+  sessionWeakAreasValue.textContent = weakAreas.length
+    ? weakAreas.map((entry) => `${entry.category} (${entry.incorrect} wrong)`).join(", ")
+    : "None this session.";
+  sessionRecommendationValue.textContent = getSessionRecommendation(attempts, accuracy, weakAreas);
+}
+
+function endSession() {
+  renderSessionSummary();
+  feedbackLine.textContent = "Session summary updated.";
+  feedbackLine.className = "feedback-line";
+}
+
+function startNewSession() {
+  session = createEmptySession();
+  renderSessionSummary();
+  feedbackLine.textContent = "New session started.";
+  feedbackLine.className = "feedback-line";
 }
 
 function updateStreak() {
@@ -1052,6 +1180,7 @@ function resetProgress() {
   progress.reviewQueue = [];
   progress.reviewSchedule = {};
   progress.itemStats = {};
+  session = createEmptySession();
   persistProgress();
   renderStats();
   setNextQuestion();
