@@ -329,7 +329,6 @@ function handlePrimaryAction() {
     }
     state.answerRevealed = true;
     ensureSeenTracked();
-    addXp(3);
     feedbackLine.textContent = `Answer: ${prompt.answerText}`;
     feedbackLine.className = "feedback-line";
     return;
