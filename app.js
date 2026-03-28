@@ -34,6 +34,105 @@ const LESSON_ITEMS = [
   { category: "Food", english: "I want to eat", tagalog: "Gusto kong kumain", pronunciation: "GOOS-toh kong koo-MAH-in" }
 ];
 
+const CORE_PACK_V2_ITEMS = [
+  { category: "Greetings", english: "Goodbye", tagalog: "Paalam", pronunciation: "pah-AH-lam" },
+  { category: "Greetings", english: "See you later", tagalog: "Kita tayo mamaya", pronunciation: "kee-TAH tah-YOH mah-MAH-yah" },
+  { category: "Greetings", english: "Welcome", tagalog: "Maligayang pagdating", pronunciation: "mah-lee-GAH-yang pag-dah-TING" },
+  { category: "Greetings", english: "Take care", tagalog: "Ingat ka", pronunciation: "EE-ngat kah" },
+  { category: "Greetings", english: "Long time no see", tagalog: "Matagal tayong hindi nagkita", pronunciation: "mah-tah-GAL tah-YONG hin-DEE nag-kee-TAH" },
+  { category: "Greetings", english: "Good luck", tagalog: "Suwertehin ka sana", pronunciation: "swer-teh-HIN kah SAH-nah" },
+  { category: "Greetings", english: "How is your day?", tagalog: "Kumusta ang araw mo?", pronunciation: "koo-MOOS-tah ang AH-raw moh" },
+  { category: "Greetings", english: "I'm fine", tagalog: "Mabuti ako", pronunciation: "mah-BOO-tee ah-KOH" },
+
+  { category: "Basics", english: "Maybe", tagalog: "Siguro", pronunciation: "see-GOO-roh" },
+  { category: "Basics", english: "Of course", tagalog: "Siyempre", pronunciation: "syem-PREH" },
+  { category: "Basics", english: "No problem", tagalog: "Walang problema", pronunciation: "wah-LANG pro-ble-MAH" },
+  { category: "Basics", english: "Wait", tagalog: "Sandali", pronunciation: "san-dah-LEE" },
+  { category: "Basics", english: "Hurry up", tagalog: "Bilisan mo", pronunciation: "bee-LEE-san moh" },
+  { category: "Basics", english: "Be careful", tagalog: "Mag-ingat ka", pronunciation: "mag-EE-ngat kah" },
+  { category: "Basics", english: "I agree", tagalog: "Sang-ayon ako", pronunciation: "sang-AH-yon ah-KOH" },
+  { category: "Basics", english: "I don't know", tagalog: "Hindi ko alam", pronunciation: "hin-DEE koh ah-LAM" },
+  { category: "Basics", english: "That's okay", tagalog: "Ayos lang", pronunciation: "AH-yos lang" },
+  { category: "Basics", english: "It's fine", tagalog: "Okay lang", pronunciation: "oh-KAY lang" },
+
+  { category: "Questions", english: "What time is it?", tagalog: "Anong oras na?", pronunciation: "AH-nong OH-ras nah" },
+  { category: "Questions", english: "Who is that?", tagalog: "Sino iyon?", pronunciation: "SEE-noh EE-yon" },
+  { category: "Questions", english: "Why?", tagalog: "Bakit?", pronunciation: "bah-KEET" },
+  { category: "Questions", english: "When will you arrive?", tagalog: "Kailan ka darating?", pronunciation: "kai-LAN kah dah-rah-TING" },
+  { category: "Questions", english: "Which one?", tagalog: "Alin doon?", pronunciation: "ah-LIN doh-ON" },
+  { category: "Questions", english: "Can I ask something?", tagalog: "Pwede ba akong magtanong?", pronunciation: "PWEH-deh bah ah-KONG mag-tah-NONG" },
+  { category: "Questions", english: "Is this correct?", tagalog: "Tama ba ito?", pronunciation: "tah-MAH bah ee-TOH" },
+  { category: "Questions", english: "Do you speak English?", tagalog: "Nagsasalita ka ba ng Ingles?", pronunciation: "nag-sah-sa-LEE-tah kah bah nang ING-gles" },
+
+  { category: "Everyday", english: "I am tired", tagalog: "Pagod ako", pronunciation: "pah-GOD ah-KOH" },
+  { category: "Everyday", english: "I am busy", tagalog: "Abala ako", pronunciation: "ah-bah-LAH ah-KOH" },
+  { category: "Everyday", english: "I am ready", tagalog: "Handa na ako", pronunciation: "han-DAH nah ah-KOH" },
+  { category: "Everyday", english: "Let's go", tagalog: "Tara na", pronunciation: "tah-RAH nah" },
+  { category: "Everyday", english: "I need help", tagalog: "Kailangan ko ng tulong", pronunciation: "kai-LAN-gan koh nang TOO-long" },
+  { category: "Everyday", english: "I am at home", tagalog: "Nasa bahay ako", pronunciation: "nah-sah bah-HIGH ah-KOH" },
+  { category: "Everyday", english: "I am at work", tagalog: "Nasa trabaho ako", pronunciation: "nah-sah trah-BAH-hoh ah-KOH" },
+  { category: "Everyday", english: "I am on my way", tagalog: "Papunta na ako", pronunciation: "pah-POON-tah nah ah-KOH" },
+  { category: "Everyday", english: "Please repeat", tagalog: "Pakiulit", pronunciation: "pah-kee-OO-leet" },
+  { category: "Everyday", english: "Speak slowly", tagalog: "Dahan-dahan magsalita", pronunciation: "dah-HAN dah-HAN mag-sah-LEE-tah" },
+
+  { category: "Numbers", english: "Six", tagalog: "Anim", pronunciation: "AH-nim" },
+  { category: "Numbers", english: "Seven", tagalog: "Pito", pronunciation: "pee-TOH" },
+  { category: "Numbers", english: "Eight", tagalog: "Walo", pronunciation: "wah-LOH" },
+  { category: "Numbers", english: "Nine", tagalog: "Siyam", pronunciation: "SYAM" },
+  { category: "Numbers", english: "Ten", tagalog: "Sampu", pronunciation: "sam-POO" },
+  { category: "Numbers", english: "Twenty", tagalog: "Dalawampu", pronunciation: "dah-lah-WAM-poo" },
+  { category: "Numbers", english: "Fifty", tagalog: "Limampu", pronunciation: "lee-MAM-poo" },
+  { category: "Numbers", english: "One hundred", tagalog: "Isang daan", pronunciation: "EE-sang dah-AHN" },
+
+  { category: "Food", english: "Breakfast", tagalog: "Almusal", pronunciation: "al-moo-SAL" },
+  { category: "Food", english: "Lunch", tagalog: "Tanghalian", pronunciation: "tang-hah-LEE-yan" },
+  { category: "Food", english: "Dinner", tagalog: "Hapunan", pronunciation: "hah-poo-NAN" },
+  { category: "Food", english: "Fish", tagalog: "Isda", pronunciation: "ees-DAH" },
+  { category: "Food", english: "Chicken", tagalog: "Manok", pronunciation: "mah-NOK" },
+  { category: "Food", english: "Pork", tagalog: "Baboy", pronunciation: "bah-BOY" },
+  { category: "Food", english: "Vegetables", tagalog: "Gulay", pronunciation: "goo-LAI" },
+  { category: "Food", english: "Spicy", tagalog: "Maanghang", pronunciation: "mah-ang-HANG" },
+  { category: "Food", english: "I'm full", tagalog: "Busog na ako", pronunciation: "boo-SOG nah ah-KOH" },
+
+  { category: "Travel", english: "Airport", tagalog: "Paliparan", pronunciation: "pah-lee-PAH-ran" },
+  { category: "Travel", english: "Bus station", tagalog: "Istasyon ng bus", pronunciation: "ees-tah-SYON nang boos" },
+  { category: "Travel", english: "Train station", tagalog: "Istasyon ng tren", pronunciation: "ees-tah-SYON nang tren" },
+  { category: "Travel", english: "Ticket", tagalog: "Tiket", pronunciation: "tee-KET" },
+  { category: "Travel", english: "Hotel", tagalog: "Hotel", pronunciation: "hoh-TEL" },
+  { category: "Travel", english: "Reservation", tagalog: "Reserbasyon", pronunciation: "reh-ser-bah-SYON" },
+  { category: "Travel", english: "Passport", tagalog: "Pasaporte", pronunciation: "pah-sah-POR-teh" },
+  { category: "Travel", english: "How much is the fare?", tagalog: "Magkano ang pamasahe?", pronunciation: "mag-KAH-noh ang pah-mah-SAH-heh" },
+  { category: "Travel", english: "I need a taxi", tagalog: "Kailangan ko ng taxi", pronunciation: "kai-LAN-gan koh nang TAK-see" },
+  { category: "Travel", english: "Please take me here", tagalog: "Dito po ako", pronunciation: "DEE-toh poh ah-KOH" },
+
+  { category: "Family", english: "Mother", tagalog: "Nanay", pronunciation: "nah-NIGH" },
+  { category: "Family", english: "Father", tagalog: "Tatay", pronunciation: "tah-TIGH" },
+  { category: "Family", english: "Older brother", tagalog: "Kuya", pronunciation: "KOO-yah" },
+  { category: "Family", english: "Older sister", tagalog: "Ate", pronunciation: "AH-teh" },
+  { category: "Family", english: "Younger sibling", tagalog: "Bunso", pronunciation: "BOON-soh" },
+  { category: "Family", english: "Child", tagalog: "Anak", pronunciation: "ah-NAK" },
+
+  { category: "Time", english: "Today", tagalog: "Ngayon", pronunciation: "nga-YON" },
+  { category: "Time", english: "Tomorrow", tagalog: "Bukas", pronunciation: "BOO-kas" },
+  { category: "Time", english: "Yesterday", tagalog: "Kahapon", pronunciation: "kah-hah-PON" },
+  { category: "Time", english: "Morning", tagalog: "Umaga", pronunciation: "oo-MAH-gah" },
+  { category: "Time", english: "Evening", tagalog: "Gabi", pronunciation: "gah-BEE" },
+  { category: "Time", english: "Night", tagalog: "Gabi", pronunciation: "gah-BEE" },
+  { category: "Time", english: "Now", tagalog: "Ngayon na", pronunciation: "nga-YON nah" },
+  { category: "Time", english: "Later", tagalog: "Mamaya", pronunciation: "mah-MAH-yah" },
+  { category: "Time", english: "Early", tagalog: "Maaga", pronunciation: "mah-AH-gah" },
+
+  { category: "Directions", english: "Left", tagalog: "Kaliwa", pronunciation: "kah-LEE-wah" },
+  { category: "Directions", english: "Right", tagalog: "Kanan", pronunciation: "kah-NAN" },
+  { category: "Directions", english: "Straight ahead", tagalog: "Derecho lang", pronunciation: "deh-REH-choh lang" },
+  { category: "Directions", english: "Near", tagalog: "Malapit", pronunciation: "mah-LAH-pit" },
+  { category: "Directions", english: "Far", tagalog: "Malayo", pronunciation: "mah-LAH-yoh" },
+  { category: "Directions", english: "Across", tagalog: "Kabila", pronunciation: "kah-bee-LAH" },
+  { category: "Directions", english: "At the corner", tagalog: "Sa kanto", pronunciation: "sah KAN-toh" },
+  { category: "Directions", english: "Turn left", tagalog: "Kumaliwa ka", pronunciation: "koo-mah-LEE-wah kah" },
+  { category: "Directions", english: "Turn right", tagalog: "Kumanan ka", pronunciation: "koo-mah-NAN kah" }
+];
+
 const STORAGE_KEY = "johns_tagalog_coach_progress_v1";
 const LEGACY_STORAGE_KEYS = [
   "aral_tagalog_progress_v1",
@@ -58,6 +157,15 @@ const DAILY_CHALLENGE_TYPES = {
     target: 3
   }
 };
+const QUIZ_DIFFICULTY = {
+  easy: "Easy",
+  medium: "Medium",
+  hard: "Hard"
+};
+const ITEM_DIFFICULTY_LABELS = {
+  beginner: "Beginner",
+  intermediate: "Intermediate"
+};
 const REVIEW_DELAYS_MS = {
   again: 15 * 60 * 1000,
   good: 12 * 60 * 60 * 1000,
@@ -70,7 +178,24 @@ const CATEGORY_UNITS = {
   Numbers: 1,
   Questions: 2,
   Everyday: 3,
-  Food: 3
+  Food: 3,
+  Time: 2,
+  Directions: 2,
+  Travel: 3,
+  Family: 3
+};
+
+const CATEGORY_DIFFICULTY = {
+  Greetings: "beginner",
+  Basics: "beginner",
+  Numbers: "beginner",
+  Questions: "beginner",
+  Everyday: "beginner",
+  Food: "beginner",
+  Family: "beginner",
+  Time: "intermediate",
+  Directions: "intermediate",
+  Travel: "intermediate"
 };
 
 const CATEGORY_GRAMMAR = {
@@ -79,7 +204,11 @@ const CATEGORY_GRAMMAR = {
   Questions: "Question words like 'ano' and 'saan' often come early.",
   Everyday: "Notice markers like 'ang', 'ng', and 'sa' in common phrases.",
   Numbers: "Numbers are often paired with context words when counting things.",
-  Food: "'Gusto ko' means 'I want' and is very common in food phrases."
+  Food: "'Gusto ko' means 'I want' and is very common in food phrases.",
+  Travel: "Location markers like 'sa' are common in transportation phrases.",
+  Family: "Family titles are often used directly as names in conversation.",
+  Time: "Time words usually come early to set context for the sentence.",
+  Directions: "Imperative forms and direction words often appear together."
 };
 
 const PHRASE_GRAMMAR = {
@@ -93,9 +222,10 @@ const PHRASE_GRAMMAR = {
   "Nag-aaral ako ng Tagalog": "'Nag-' often marks ongoing action."
 };
 
-const BASE_ITEMS = LESSON_ITEMS.map((item) => ({
+const BASE_ITEMS = [...LESSON_ITEMS, ...CORE_PACK_V2_ITEMS].map((item) => ({
   ...item,
   unit: CATEGORY_UNITS[item.category] || 1,
+  difficulty: resolveItemDifficulty(item),
   source: "base",
   grammar: PHRASE_GRAMMAR[item.tagalog] || CATEGORY_GRAMMAR[item.category] || "Study word order and markers in this phrase."
 }));
@@ -357,23 +487,27 @@ function renderModeLayout() {
   promptLine.textContent = prompt.promptLabel;
   questionLine.textContent = prompt.questionText;
   hintLine.textContent = prompt.hintText;
-  metaLine.textContent = buildMetaLabel(state.currentItem, { includeCategory: state.mode !== "quiz" });
+  metaLine.textContent = buildMetaLabel(state.currentItem, { includeCategory: !isChoiceMode(state.mode) });
 
   if (state.mode === "flashcard") {
     modeTitle.textContent = "Flashcards";
     primaryActionBtn.textContent = "Reveal Answer";
     primaryActionBtn.disabled = false;
+    pronounceBtn.disabled = false;
     typingForm.classList.add("hidden");
     quizOptions.classList.add("hidden");
     return;
   }
 
   if (state.mode === "quiz") {
+    const difficulty = getAdaptiveChoiceDifficulty();
     modeTitle.textContent = "Multiple Choice Quiz";
     primaryActionBtn.textContent = "Reveal Answer";
     primaryActionBtn.disabled = false;
+    pronounceBtn.disabled = false;
     typingForm.classList.add("hidden");
     quizOptions.classList.remove("hidden");
+    hintLine.textContent = `Difficulty: ${QUIZ_DIFFICULTY[difficulty]} options`;
     renderQuizOptions(prompt.answerField);
     return;
   }
@@ -381,6 +515,7 @@ function renderModeLayout() {
   modeTitle.textContent = "Typing Challenge";
   primaryActionBtn.textContent = "Show Answer";
   primaryActionBtn.disabled = false;
+  pronounceBtn.disabled = true;
   typingInput.placeholder =
     prompt.answerField === "tagalog" ? "Type your Tagalog answer..." : "Type your English answer...";
   quizOptions.classList.add("hidden");
@@ -389,14 +524,8 @@ function renderModeLayout() {
 
 function renderQuizOptions(answerField) {
   const answer = state.currentItem[answerField];
-  const decoyField = answerField === "tagalog" ? "tagalog" : "english";
-  const studyItems = getStudyItems();
-  const uniquePool = Array.from(
-    new Set(
-      studyItems.filter((item) => item[decoyField] !== answer).map((item) => item[decoyField])
-    )
-  );
-  const options = [answer, ...sample(uniquePool, 3)];
+  const decoys = getAdaptiveDecoys(answerField, answer);
+  const options = [answer, ...decoys];
   shuffle(options);
 
   options.forEach((text) => {
@@ -407,6 +536,159 @@ function renderQuizOptions(answerField) {
     btn.addEventListener("click", () => handleQuizAnswer(text, answer, btn));
     quizOptions.append(btn);
   });
+}
+
+function isChoiceMode(mode) {
+  return mode === "quiz";
+}
+
+function getAdaptiveChoiceDifficulty() {
+  const stats = progress.choiceStats || {};
+  const correct = Math.max(0, Number(stats.correct) || 0);
+  const incorrect = Math.max(0, Number(stats.incorrect) || 0);
+  const attempts = correct + incorrect;
+  if (attempts < 8) {
+    return "easy";
+  }
+
+  const accuracy = correct / attempts;
+  if (accuracy >= 0.85 && attempts >= 20) {
+    return "hard";
+  }
+  if (accuracy >= 0.68) {
+    return "medium";
+  }
+  return "easy";
+}
+
+function normalizeDifficulty(value, fallback = "beginner") {
+  const normalized = String(value || "").trim().toLowerCase();
+  if (normalized === "beginner" || normalized === "intermediate") {
+    return normalized;
+  }
+  return fallback;
+}
+
+function resolveItemDifficulty(item) {
+  const explicitDifficulty = normalizeDifficulty(item?.difficulty || "", "");
+  if (explicitDifficulty) {
+    return explicitDifficulty;
+  }
+  const byCategory = normalizeDifficulty(CATEGORY_DIFFICULTY[item?.category] || "", "");
+  if (byCategory) {
+    return byCategory;
+  }
+  return "beginner";
+}
+
+function getItemDifficultyLabel(item) {
+  const difficulty = resolveItemDifficulty(item);
+  return ITEM_DIFFICULTY_LABELS[difficulty] || ITEM_DIFFICULTY_LABELS.beginner;
+}
+
+function getAdaptiveDecoys(answerField, answer) {
+  const answerNorm = normalize(answer);
+  const answerTokens = new Set(answerNorm.split(" ").filter(Boolean));
+  const currentDifficulty = resolveItemDifficulty(state.currentItem);
+  const decoyField = answerField === "tagalog" ? "tagalog" : "english";
+  const allItems = getStudyItems();
+  const uniqueByValue = new Map();
+
+  allItems.forEach((item) => {
+    const value = item[decoyField];
+    if (typeof value !== "string") {
+      return;
+    }
+    const normalizedValue = normalize(value);
+    if (!normalizedValue || normalizedValue === answerNorm || uniqueByValue.has(normalizedValue)) {
+      return;
+    }
+    uniqueByValue.set(normalizedValue, { value, item });
+  });
+
+  const decoyEntries = Array.from(uniqueByValue.values());
+  const difficulty = getAdaptiveChoiceDifficulty();
+  if (difficulty === "easy") {
+    return sample(decoyEntries.map((entry) => entry.value), 3);
+  }
+
+  if (difficulty === "medium") {
+    const sameCategoryAndDifficulty = decoyEntries
+      .filter(
+        (entry) =>
+          entry.item.category === state.currentItem.category &&
+          resolveItemDifficulty(entry.item) === currentDifficulty
+      )
+      .map((entry) => entry.value);
+    const picked = sample(sameCategoryAndDifficulty, 3);
+    if (picked.length < 3) {
+      const sameDifficulty = decoyEntries
+        .filter(
+          (entry) => resolveItemDifficulty(entry.item) === currentDifficulty && !picked.includes(entry.value)
+        )
+        .map((entry) => entry.value);
+      picked.push(...sample(sameDifficulty, 3 - picked.length));
+    }
+    if (picked.length < 3) {
+      const sameCategory = decoyEntries
+        .filter((entry) => entry.item.category === state.currentItem.category && !picked.includes(entry.value))
+        .map((entry) => entry.value);
+      picked.push(...sample(sameCategory, 3 - picked.length));
+    }
+    if (picked.length < 3) {
+      const leftovers = decoyEntries
+        .map((entry) => entry.value)
+        .filter((value) => !picked.includes(value));
+      picked.push(...sample(leftovers, 3 - picked.length));
+    }
+    return picked;
+  }
+
+  const scored = decoyEntries
+    .map((entry) => {
+      const valueNorm = normalize(entry.value);
+      const tokens = valueNorm.split(" ").filter(Boolean);
+      const overlap = tokens.filter((token) => answerTokens.has(token)).length;
+      const lengthDelta = Math.abs(valueNorm.length - answerNorm.length);
+      let score = overlap * 3 - lengthDelta * 0.08;
+      if (entry.item.category === state.currentItem.category) {
+        score += 1.4;
+      }
+      if (resolveItemDifficulty(entry.item) === currentDifficulty) {
+        score += 1.15;
+      }
+      if ((valueNorm[0] || "") === (answerNorm[0] || "")) {
+        score += 0.45;
+      }
+      return { ...entry, score };
+    })
+    .sort((a, b) => b.score - a.score);
+
+  const hardPool = scored.slice(0, Math.min(8, scored.length)).map((entry) => entry.value);
+  const hardPicked = sample(hardPool, 3);
+  if (hardPicked.length < 3) {
+    const leftovers = scored
+      .map((entry) => entry.value)
+      .filter((value) => !hardPicked.includes(value));
+    hardPicked.push(...sample(leftovers, 3 - hardPicked.length));
+  }
+  return hardPicked;
+}
+
+function trackChoiceModeResult(isCorrect) {
+  if (!isChoiceMode(state.mode)) {
+    return;
+  }
+  if (!progress.choiceStats || typeof progress.choiceStats !== "object") {
+    progress.choiceStats = { correct: 0, incorrect: 0 };
+  }
+
+  if (isCorrect) {
+    progress.choiceStats.correct = (Number(progress.choiceStats.correct) || 0) + 1;
+  } else {
+    progress.choiceStats.incorrect = (Number(progress.choiceStats.incorrect) || 0) + 1;
+  }
+  persistProgress();
 }
 
 function getStudyItems() {
@@ -423,6 +705,7 @@ function getCustomStudyItems() {
     english: item.english,
     tagalog: item.tagalog,
     pronunciation: item.pronunciation || "N/A",
+    difficulty: resolveItemDifficulty(item),
     grammar:
       item.grammar ||
       CATEGORY_GRAMMAR[item.category] ||
@@ -469,7 +752,7 @@ function handlePrimaryAction() {
     return;
   }
 
-  if (state.mode === "quiz") {
+  if (isChoiceMode(state.mode)) {
     if (state.quizAnswered) {
       return;
     }
@@ -513,6 +796,7 @@ function handleQuizAnswer(choice, answer, selectedButton) {
   if (isCorrect) {
     removeFromReviewQueue(state.currentItem);
     addScore({ correct: 1, xp: 9, item: state.currentItem, itemCorrect: 1 });
+    trackChoiceModeResult(true);
     feedbackLine.textContent = "";
     hideCoachingCard();
     showRatingBar();
@@ -522,6 +806,7 @@ function handleQuizAnswer(choice, answer, selectedButton) {
 
   addToReviewQueue(state.currentItem);
   addScore({ incorrect: 1, xp: -4, item: state.currentItem, itemIncorrect: 1 });
+  trackChoiceModeResult(false);
   feedbackLine.textContent = "";
   showWrongAnswerCoaching(state.currentItem, prompt);
   showRatingBar();
@@ -761,6 +1046,7 @@ function buildMetaLabel(item, options = {}) {
   const parts = [`Seen: ${stats.seen}`, `Mastery: ${mastery}`];
   if (includeCategory) {
     parts.unshift(`Category: ${item.category}`);
+    parts.splice(1, 0, `Level: ${getItemDifficultyLabel(item)}`);
   }
   return parts.join(" | ");
 }
@@ -1026,7 +1312,7 @@ function renderCustomItems() {
     const meta = document.createElement("p");
     meta.className = "custom-item-meta";
     const pronunciation = item.pronunciation ? ` | Pronunciation: ${item.pronunciation}` : "";
-    meta.textContent = `Category: ${item.category}${pronunciation}`;
+    meta.textContent = `Category: ${item.category} | Level: ${getItemDifficultyLabel(item)}${pronunciation}`;
 
     textWrap.append(title, meta);
 
@@ -1103,6 +1389,7 @@ function handleCustomSubmit(event) {
     progress.customItems.unshift({
       id: createCustomItemId(),
       ...draft,
+      difficulty: "beginner",
       createdAt: new Date().toISOString()
     });
   }
@@ -1311,7 +1598,7 @@ function addScore({ correct = 0, incorrect = 0, xp = 0, item = null, itemCorrect
   persistProgress();
   renderStats();
   if (state.currentItem) {
-    metaLine.textContent = buildMetaLabel(state.currentItem, { includeCategory: state.mode !== "quiz" });
+    metaLine.textContent = buildMetaLabel(state.currentItem, { includeCategory: !isChoiceMode(state.mode) });
   }
 }
 
@@ -1672,6 +1959,7 @@ function normalizeCustomItem(rawItem) {
     category: normalizeCustomCategory(rawItem.category),
     pronunciation: String(rawItem.pronunciation || "").trim(),
     grammar: String(rawItem.grammar || "").trim(),
+    difficulty: resolveItemDifficulty(rawItem),
     createdAt: rawItem.createdAt || new Date().toISOString()
   };
 }
@@ -1728,6 +2016,17 @@ function normalizeDailyChallenge(rawChallenge) {
   };
 }
 
+function normalizeChoiceStats(rawChoiceStats) {
+  if (!rawChoiceStats || typeof rawChoiceStats !== "object") {
+    return { correct: 0, incorrect: 0 };
+  }
+
+  return {
+    correct: Math.max(0, Number(rawChoiceStats.correct) || 0),
+    incorrect: Math.max(0, Number(rawChoiceStats.incorrect) || 0)
+  };
+}
+
 function loadProgress() {
   try {
     let raw = localStorage.getItem(STORAGE_KEY);
@@ -1766,6 +2065,7 @@ function loadProgress() {
       reviewQueue: normalizeReviewQueue(parsed.reviewQueue),
       reviewSchedule: normalizeReviewSchedule(parsed.reviewSchedule),
       dailyChallenge: normalizeDailyChallenge(parsed.dailyChallenge),
+      choiceStats: normalizeChoiceStats(parsed.choiceStats),
       customItems: normalizeCustomItems(parsed.customItems),
       itemStats
     };
@@ -1785,6 +2085,7 @@ function defaultProgress() {
     reviewQueue: [],
     reviewSchedule: {},
     dailyChallenge: null,
+    choiceStats: { correct: 0, incorrect: 0 },
     customItems: [],
     itemStats: {}
   };
@@ -1820,17 +2121,98 @@ function speakCurrentTagalog() {
     return;
   }
 
-  if (!("speechSynthesis" in window)) {
-    feedbackLine.textContent = "Speech is not supported in this browser.";
-    feedbackLine.className = "feedback-line feedback-bad";
-    return;
+  const prompt = getPromptConfig(state.currentItem);
+  const speakingTagalog = prompt.questionField === "tagalog";
+  let speechText = prompt.questionText;
+  let speechLang = getSpeechLanguage(prompt.questionField);
+  let voiceType = speakingTagalog ? "tagalog" : "english";
+
+  // Browser Tagalog voices are often poor; prefer pronunciation guide with an English voice.
+  if (speakingTagalog && state.currentItem.pronunciation) {
+    speechText = formatPronunciationForSpeech(state.currentItem.pronunciation);
+    speechLang = "en-US";
+    voiceType = "english";
   }
 
-  const utterance = new SpeechSynthesisUtterance(state.currentItem.tagalog);
-  utterance.lang = "tl-PH";
-  utterance.rate = 0.95;
+  const spoken = speakText(speechText, speechLang, { voiceType });
+  if (spoken) {
+    feedbackLine.textContent =
+      speakingTagalog && state.currentItem.pronunciation
+        ? "Playing pronunciation guide."
+        : "";
+    feedbackLine.className = "feedback-line";
+  }
+}
+
+function getSpeechLanguage(questionField) {
+  return questionField === "english" ? "en-US" : "tl-PH";
+}
+
+function speakText(text, lang = "tl-PH", options = {}) {
+  const showUnsupportedMessage = options.showUnsupportedMessage !== false;
+  const voiceType = options.voiceType || "default";
+  if (!("speechSynthesis" in window)) {
+    if (showUnsupportedMessage) {
+      feedbackLine.textContent = "Speech is not supported in this browser.";
+      feedbackLine.className = "feedback-line feedback-bad";
+    }
+    return false;
+  }
+
+  const cleanText = typeof text === "string" ? text.trim() : "";
+  if (!cleanText) {
+    return false;
+  }
+
+  const utterance = new SpeechSynthesisUtterance(cleanText);
+  const preferredVoice = getPreferredSpeechVoice(voiceType);
+  if (preferredVoice) {
+    utterance.voice = preferredVoice;
+    utterance.lang = preferredVoice.lang || lang;
+  } else {
+    utterance.lang = lang;
+  }
+  utterance.rate = voiceType === "tagalog" ? 0.9 : 0.95;
   window.speechSynthesis.cancel();
   window.speechSynthesis.speak(utterance);
+  return true;
+}
+
+function getPreferredSpeechVoice(voiceType) {
+  if (!("speechSynthesis" in window)) {
+    return null;
+  }
+
+  const voices = window.speechSynthesis.getVoices();
+  if (!voices.length) {
+    return null;
+  }
+
+  if (voiceType === "tagalog") {
+    return (
+      voices.find((voice) => /^fil\b|^tl\b/i.test(voice.lang)) ||
+      voices.find((voice) => /tagalog|filipino/i.test(voice.name)) ||
+      null
+    );
+  }
+
+  if (voiceType === "english") {
+    return (
+      voices.find((voice) => /^en-us\b/i.test(voice.lang)) ||
+      voices.find((voice) => /^en\b/i.test(voice.lang)) ||
+      null
+    );
+  }
+
+  return null;
+}
+
+function formatPronunciationForSpeech(pronunciation) {
+  return String(pronunciation || "")
+    .replace(/[-_/]/g, " ")
+    .replace(/\s+/g, " ")
+    .trim()
+    .toLowerCase();
 }
 
 function adjustXp(delta) {
