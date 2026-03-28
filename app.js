@@ -44,6 +44,20 @@ const XP_PER_LEVEL = 100;
 const DEFAULT_GOAL_TARGET = 10;
 const MAX_REVIEW_QUEUE = 25;
 const CUSTOM_PACK_VERSION = 1;
+const DAILY_CHALLENGE_TYPES = {
+  correct_answers: {
+    title: "Land 5 correct answers in Quiz or Typing.",
+    target: 5
+  },
+  xp_gain: {
+    title: "Earn 30 XP in Quiz or Typing.",
+    target: 30
+  },
+  strong_accuracy: {
+    title: "Get 3 correct answers in a row.",
+    target: 3
+  }
+};
 const REVIEW_DELAYS_MS = {
   again: 15 * 60 * 1000,
   good: 12 * 60 * 60 * 1000,
@@ -115,6 +129,12 @@ const xpValue = document.getElementById("xpValue");
 const streakValue = document.getElementById("streakValue");
 const accuracyValue = document.getElementById("accuracyValue");
 const masteredValue = document.getElementById("masteredValue");
+const challengeTitle = document.getElementById("challengeTitle");
+const challengeFill = document.getElementById("challengeFill");
+const challengeProgressText = document.getElementById("challengeProgressText");
+const challengeStatusText = document.getElementById("challengeStatusText");
+const badgeCountText = document.getElementById("badgeCountText");
+const badgeList = document.getElementById("badgeList");
 const goalRing = document.getElementById("goalRing");
 const goalProgressText = document.getElementById("goalProgressText");
 const goalStatusText = document.getElementById("goalStatusText");
@@ -164,6 +184,7 @@ let session = createEmptySession();
 init();
 
 function init() {
+  ensureDailyChallenge();
   populateCategories();
   bindEvents();
   focusSelect.value = state.focus;
@@ -1277,6 +1298,7 @@ function addScore({ correct = 0, incorrect = 0, xp = 0, item = null, itemCorrect
   progress.correct += correct;
   progress.incorrect += incorrect;
   adjustXp(xp);
+  trackDailyChallengeProgress({ correct, incorrect, xp });
   updateStreak();
   trackSessionScore({ correct, incorrect, xp, item, itemCorrect, itemIncorrect });
 
@@ -1315,6 +1337,92 @@ function renderStats() {
   syncGoalButtons();
   renderReviewQueueCount();
   renderSessionSummary();
+  renderMotivation({ attempts, accuracy, masteredCount });
+}
+
+function renderMotivation({ attempts, accuracy, masteredCount }) {
+  renderDailyChallenge();
+  renderMilestoneBadges({ attempts, accuracy, masteredCount });
+}
+
+function renderDailyChallenge() {
+  if (!challengeTitle || !challengeFill || !challengeProgressText || !challengeStatusText) {
+    return;
+  }
+
+  ensureDailyChallenge();
+  const challenge = progress.dailyChallenge;
+  const challengeType = DAILY_CHALLENGE_TYPES[challenge.type] || DAILY_CHALLENGE_TYPES.correct_answers;
+  const target = Number(challenge.target) || challengeType.target;
+  const rawProgress = Math.max(0, Number(challenge.progress) || 0);
+  const completed = Boolean(challenge.completed) || rawProgress >= target;
+  const current = Math.min(target, rawProgress);
+  const pct = Math.min(100, Math.round((current / target) * 100));
+
+  challengeTitle.textContent = challengeType.title;
+  challengeFill.style.width = `${pct}%`;
+  challengeProgressText.textContent = formatChallengeProgress(challenge.type, current, target);
+  challengeStatusText.textContent = completed ? "Completed for today" : "In progress";
+  challengeStatusText.classList.toggle("is-complete", completed);
+}
+
+function renderMilestoneBadges({ attempts, accuracy, masteredCount }) {
+  if (!badgeList || !badgeCountText) {
+    return;
+  }
+
+  const badges = [
+    {
+      title: "Rising Learner",
+      description: "Reach 100 total XP.",
+      unlocked: progress.xp >= 100
+    },
+    {
+      title: "Consistency",
+      description: "Build a 3-day streak.",
+      unlocked: progress.streak >= 3
+    },
+    {
+      title: "Sharp Recall",
+      description: "Hold 80%+ accuracy over 20 attempts.",
+      unlocked: attempts >= 20 && accuracy >= 80
+    },
+    {
+      title: "Phrase Master",
+      description: "Master 5 phrases.",
+      unlocked: masteredCount >= 5
+    }
+  ];
+
+  badgeList.innerHTML = "";
+  badges.forEach((badge) => {
+    const li = document.createElement("li");
+    li.className = `badge-chip${badge.unlocked ? " is-unlocked" : ""}`;
+
+    const title = document.createElement("p");
+    title.className = "badge-chip-title";
+    title.textContent = `${badge.unlocked ? "\u2713 " : ""}${badge.title}`;
+
+    const desc = document.createElement("p");
+    desc.className = "badge-chip-desc";
+    desc.textContent = badge.description;
+
+    li.append(title, desc);
+    badgeList.append(li);
+  });
+
+  const unlockedCount = badges.filter((badge) => badge.unlocked).length;
+  badgeCountText.textContent = `${unlockedCount}/${badges.length} unlocked`;
+}
+
+function formatChallengeProgress(challengeType, current, target) {
+  if (challengeType === "xp_gain") {
+    return `${current}/${target} XP`;
+  }
+  if (challengeType === "strong_accuracy") {
+    return `${current}/${target} streak`;
+  }
+  return `${current}/${target} correct`;
 }
 
 function getGoalTarget() {
@@ -1353,6 +1461,65 @@ function renderReviewQueueCount() {
   }
   const count = Array.isArray(progress.reviewQueue) ? progress.reviewQueue.length : 0;
   reviewQueueCount.textContent = String(count);
+}
+
+function trackDailyChallengeProgress({ correct = 0, incorrect = 0, xp = 0 }) {
+  ensureDailyChallenge();
+  const challenge = progress.dailyChallenge;
+  if (!challenge || challenge.completed) {
+    return;
+  }
+
+  const target = Number(challenge.target) || 1;
+  const current = Number(challenge.progress) || 0;
+  let nextProgress = current;
+
+  if (challenge.type === "correct_answers") {
+    nextProgress += Math.max(0, correct);
+  } else if (challenge.type === "xp_gain") {
+    nextProgress += Math.max(0, xp);
+  } else if (challenge.type === "strong_accuracy") {
+    if (incorrect > 0) {
+      nextProgress = 0;
+    } else if (correct > 0) {
+      nextProgress += correct;
+    }
+  }
+
+  challenge.progress = Math.max(0, Math.min(target, nextProgress));
+  challenge.completed = challenge.progress >= target;
+}
+
+function ensureDailyChallenge() {
+  const today = getISODate(new Date());
+  const challenge = progress.dailyChallenge;
+
+  if (challenge && challenge.date === today && DAILY_CHALLENGE_TYPES[challenge.type]) {
+    challenge.target = Number(challenge.target) || DAILY_CHALLENGE_TYPES[challenge.type].target;
+    challenge.progress = Math.max(0, Number(challenge.progress) || 0);
+    challenge.completed = Boolean(challenge.completed) || challenge.progress >= challenge.target;
+    return;
+  }
+
+  const challengeType = pickDailyChallengeType(today);
+  const challengeConfig = DAILY_CHALLENGE_TYPES[challengeType] || DAILY_CHALLENGE_TYPES.correct_answers;
+  progress.dailyChallenge = {
+    date: today,
+    type: challengeType,
+    target: challengeConfig.target,
+    progress: 0,
+    completed: false
+  };
+  persistProgress();
+}
+
+function pickDailyChallengeType(isoDate) {
+  const challengeKeys = Object.keys(DAILY_CHALLENGE_TYPES);
+  const numeric = Number(isoDate.replace(/-/g, ""));
+  if (!challengeKeys.length || !Number.isFinite(numeric)) {
+    return "correct_answers";
+  }
+  return challengeKeys[numeric % challengeKeys.length];
 }
 
 function getSessionWeakAreas(limit = 3) {
@@ -1539,6 +1706,28 @@ function normalizeCustomItems(rawItems) {
   return normalized;
 }
 
+function normalizeDailyChallenge(rawChallenge) {
+  if (!rawChallenge || typeof rawChallenge !== "object") {
+    return null;
+  }
+
+  const type = String(rawChallenge.type || "");
+  if (!DAILY_CHALLENGE_TYPES[type]) {
+    return null;
+  }
+
+  const target = Number(rawChallenge.target) || DAILY_CHALLENGE_TYPES[type].target;
+  const progressValue = Math.max(0, Number(rawChallenge.progress) || 0);
+
+  return {
+    date: String(rawChallenge.date || ""),
+    type,
+    target,
+    progress: Math.min(target, progressValue),
+    completed: Boolean(rawChallenge.completed) || progressValue >= target
+  };
+}
+
 function loadProgress() {
   try {
     let raw = localStorage.getItem(STORAGE_KEY);
@@ -1576,6 +1765,7 @@ function loadProgress() {
       goalTarget: Number(parsed.goalTarget) || DEFAULT_GOAL_TARGET,
       reviewQueue: normalizeReviewQueue(parsed.reviewQueue),
       reviewSchedule: normalizeReviewSchedule(parsed.reviewSchedule),
+      dailyChallenge: normalizeDailyChallenge(parsed.dailyChallenge),
       customItems: normalizeCustomItems(parsed.customItems),
       itemStats
     };
@@ -1594,6 +1784,7 @@ function defaultProgress() {
     goalTarget: DEFAULT_GOAL_TARGET,
     reviewQueue: [],
     reviewSchedule: {},
+    dailyChallenge: null,
     customItems: [],
     itemStats: {}
   };
