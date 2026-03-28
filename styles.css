@@ -8,6 +8,8 @@
   --accent-strong: #0b7f9e;
   --accent-soft: #c7f3f5;
   --mint: #56b3e4;
+  --success-bright: #00c853;
+  --error-bright: #ff1744;
   --radius: 18px;
   --shadow: 0 22px 40px rgba(24, 33, 47, 0.12);
 }
@@ -71,6 +73,27 @@ body {
   font-size: clamp(2rem, 5vw, 3.2rem);
   font-family: "Fraunces", Georgia, serif;
   letter-spacing: -0.02em;
+}
+
+.hero-title-row {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.level-badge {
+  display: inline-flex;
+  align-items: center;
+  border-radius: 999px;
+  padding: 0.35rem 0.72rem;
+  font-size: 0.82rem;
+  font-weight: 800;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  color: #00695c;
+  background: linear-gradient(120deg, #c8fff0 0%, #b6efff 100%);
+  border: 1px solid rgba(0, 105, 92, 0.2);
 }
 
 .hero-copy {
@@ -155,21 +178,7 @@ input {
   display: flex;
   gap: 1rem;
   align-items: flex-end;
-  justify-content: space-between;
-}
-
-.mode-wrap {
-  display: grid;
-  gap: 0.45rem;
-}
-
-.mini-label {
-  margin: 0;
-  font-size: 0.82rem;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  color: var(--ink-soft);
-  font-weight: 700;
+  justify-content: flex-end;
 }
 
 .mode-toggle {
@@ -205,10 +214,22 @@ input {
   gap: 0.32rem;
 }
 
+.study-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 0.2rem;
+}
+
 .mode-title {
   margin: 0;
   color: var(--ink-soft);
   font-weight: 700;
+}
+
+.study-mode-toggle {
+  justify-content: flex-end;
 }
 
 .prompt-line {
@@ -245,26 +266,108 @@ input {
   border-radius: 12px;
   border: 1px solid var(--line);
   background: #fff;
+  color: var(--ink);
   padding: 0.72rem 0.85rem;
   cursor: pointer;
   font-weight: 600;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.6rem;
 }
 
 .quiz-option:hover {
   border-color: rgba(26, 167, 173, 0.42);
 }
 
+.quiz-option:disabled {
+  color: var(--ink-soft);
+  background: #f5fbfd;
+}
+
+.quiz-option-correct {
+  border-color: rgba(15, 124, 97, 0.45);
+  background: #ecfaf5;
+  color: #0f7c61;
+}
+
+.quiz-option-correct::after {
+  content: "✓";
+  font-weight: 800;
+  color: var(--success-bright);
+  text-shadow: 0 0 8px rgba(0, 200, 83, 0.25);
+}
+
+.quiz-option-incorrect {
+  border-color: rgba(173, 47, 34, 0.4);
+  background: #fff3f2;
+  color: #ad2f22;
+}
+
+.quiz-option-incorrect::after {
+  content: "✕";
+  font-weight: 800;
+  color: var(--error-bright);
+  text-shadow: 0 0 8px rgba(255, 23, 68, 0.22);
+}
+
 .typing-form {
   display: grid;
-  grid-template-columns: 1fr auto;
+  grid-template-columns: minmax(0, 1fr) auto;
   gap: 0.6rem;
   margin-top: 1.15rem;
+}
+
+.typing-input-wrap {
+  position: relative;
+}
+
+.typing-input-wrap input {
+  padding-right: 2.25rem;
+}
+
+.typing-input-correct {
+  border-color: rgba(15, 124, 97, 0.55);
+  background: #f0faf6;
+}
+
+.typing-input-incorrect {
+  border-color: rgba(173, 47, 34, 0.5);
+  background: #fff4f3;
+}
+
+.typing-result-icon {
+  position: absolute;
+  right: 0.72rem;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 1rem;
+  font-weight: 800;
+  opacity: 0;
+}
+
+.typing-result-icon.show {
+  opacity: 1;
+}
+
+.typing-result-correct {
+  color: var(--success-bright);
+  text-shadow: 0 0 8px rgba(0, 200, 83, 0.25);
+}
+
+.typing-result-incorrect {
+  color: var(--error-bright);
+  text-shadow: 0 0 8px rgba(255, 23, 68, 0.22);
 }
 
 .feedback-line {
   min-height: 1.5em;
   margin: 1rem 0 0;
   font-weight: 700;
+}
+
+.feedback-line:empty {
+  display: none;
 }
 
 .feedback-good {
@@ -279,7 +382,7 @@ input {
   margin-top: 1.1rem;
   display: flex;
   gap: 0.7rem;
-  justify-content: space-between;
+  justify-content: flex-end;
   align-items: center;
 }
 
@@ -366,12 +469,21 @@ kbd {
 
 @media (max-width: 780px) {
   .control-footer {
-    flex-direction: column;
     align-items: stretch;
   }
 
   #resetProgressBtn {
     width: 100%;
+  }
+
+  .study-head {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.65rem;
+  }
+
+  .study-mode-toggle .mode-btn {
+    flex: 1;
   }
 
   .actions {

@@ -19,7 +19,10 @@
     <main class="app-shell">
       <header class="hero">
         <p class="kicker">English -> Tagalog</p>
-        <h1>Johns Tagalog Coach</h1>
+        <div class="hero-title-row">
+          <h1>Johns Tagalog Coach</h1>
+          <span id="levelBadge" class="level-badge">Level 1</span>
+        </div>
         <p class="hero-copy">
           Build practical Tagalog fast with flashcards, quizzes, and typing drills.
         </p>
@@ -72,25 +75,23 @@
         </div>
 
         <div class="control-footer">
-          <div class="mode-wrap">
-            <p class="mini-label">Mode</p>
-            <div class="mode-toggle" role="tablist" aria-label="Study mode">
-              <button class="mode-btn active" data-mode="flashcard" role="tab" aria-selected="true">
-                Flashcards
-              </button>
-              <button class="mode-btn" data-mode="quiz" role="tab" aria-selected="false">Quiz</button>
-              <button class="mode-btn" data-mode="typing" role="tab" aria-selected="false">
-                Typing
-              </button>
-            </div>
-          </div>
-
           <button id="resetProgressBtn" class="danger" type="button">Reset Progress</button>
         </div>
       </section>
 
       <section class="study-card">
-        <p id="modeTitle" class="mode-title">Flashcards</p>
+        <div class="study-head">
+          <p id="modeTitle" class="mode-title">Flashcards</p>
+          <div class="mode-toggle study-mode-toggle" role="tablist" aria-label="Study mode">
+            <button class="mode-btn active" data-mode="flashcard" role="tab" aria-selected="true">
+              Flashcards
+            </button>
+            <button class="mode-btn" data-mode="quiz" role="tab" aria-selected="false">Quiz</button>
+            <button class="mode-btn" data-mode="typing" role="tab" aria-selected="false">
+              Typing
+            </button>
+          </div>
+        </div>
         <p id="promptLine" class="prompt-line"></p>
         <h2 id="questionLine" class="question-line"></h2>
         <p id="hintLine" class="hint-line"></p>
@@ -99,20 +100,23 @@
         <div id="quizOptions" class="quiz-options hidden" aria-live="polite"></div>
 
         <form id="typingForm" class="typing-form hidden">
-          <input
-            id="typingInput"
-            type="text"
-            placeholder="Type your Tagalog answer..."
-            autocomplete="off"
-          />
+          <div class="typing-input-wrap">
+            <input
+              id="typingInput"
+              type="text"
+              placeholder="Type your Tagalog answer..."
+              autocomplete="off"
+            />
+            <span id="typingResultIcon" class="typing-result-icon" aria-hidden="true"></span>
+          </div>
           <button type="submit">Check</button>
         </form>
 
         <p id="feedbackLine" class="feedback-line" aria-live="polite"></p>
 
         <div class="actions">
-          <button id="nextBtn" class="ghost">Next Card</button>
           <button id="primaryActionBtn">Reveal Answer</button>
+          <button id="nextBtn" class="ghost">Next Card</button>
         </div>
         <p class="shortcuts-note">Shortcuts: <kbd>Enter</kbd> reveal/check, <kbd>N</kbd> next card</p>
       </section>

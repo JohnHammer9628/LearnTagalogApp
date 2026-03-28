@@ -45,6 +45,7 @@ const categorySelect = document.getElementById("categorySelect");
 const focusSelect = document.getElementById("focusSelect");
 const directionSelect = document.getElementById("directionSelect");
 const resetProgressBtn = document.getElementById("resetProgressBtn");
+const levelBadge = document.getElementById("levelBadge");
 const modeTitle = document.getElementById("modeTitle");
 const promptLine = document.getElementById("promptLine");
 const questionLine = document.getElementById("questionLine");
@@ -54,6 +55,7 @@ const feedbackLine = document.getElementById("feedbackLine");
 const quizOptions = document.getElementById("quizOptions");
 const typingForm = document.getElementById("typingForm");
 const typingInput = document.getElementById("typingInput");
+const typingResultIcon = document.getElementById("typingResultIcon");
 const primaryActionBtn = document.getElementById("primaryActionBtn");
 const nextBtn = document.getElementById("nextBtn");
 const xpValue = document.getElementById("xpValue");
@@ -61,6 +63,7 @@ const streakValue = document.getElementById("streakValue");
 const accuracyValue = document.getElementById("accuracyValue");
 const masteredValue = document.getElementById("masteredValue");
 const modeButtons = Array.from(document.querySelectorAll(".mode-btn"));
+const XP_PER_LEVEL = 100;
 
 const progress = loadProgress();
 
@@ -167,6 +170,7 @@ function setNextQuestion() {
     metaLine.textContent = "";
     feedbackLine.textContent = "";
     quizOptions.innerHTML = "";
+    clearTypingOutcome();
     return;
   }
 
@@ -176,6 +180,7 @@ function setNextQuestion() {
   state.seenTracked = false;
   feedbackLine.textContent = "";
   feedbackLine.className = "feedback-line";
+  clearTypingOutcome();
 
   renderModeLayout();
 }
@@ -186,7 +191,7 @@ function renderModeLayout() {
   }
 
   const prompt = getPromptConfig(state.currentItem);
-  typingInput.value = "";
+  clearTypingOutcome();
   quizOptions.innerHTML = "";
 
   promptLine.textContent = prompt.promptLabel;
@@ -238,7 +243,7 @@ function renderQuizOptions(answerField) {
     btn.type = "button";
     btn.className = "quiz-option";
     btn.textContent = text;
-    btn.addEventListener("click", () => handleQuizAnswer(text, answer));
+    btn.addEventListener("click", () => handleQuizAnswer(text, answer, btn));
     quizOptions.append(btn);
   });
 }
@@ -268,9 +273,7 @@ function handlePrimaryAction() {
     }
     state.quizAnswered = true;
     ensureSeenTracked();
-    addXp(1);
-    feedbackLine.textContent = `Answer: ${prompt.answerText}`;
-    feedbackLine.className = "feedback-line";
+    revealCorrectQuizOption(prompt.answerText);
     disableQuizOptions();
     return;
   }
@@ -281,7 +284,7 @@ function handlePrimaryAction() {
   feedbackLine.className = "feedback-line";
 }
 
-function handleQuizAnswer(choice, answer) {
+function handleQuizAnswer(choice, answer, selectedButton) {
   if (state.quizAnswered || !state.currentItem) {
     return;
   }
@@ -290,18 +293,21 @@ function handleQuizAnswer(choice, answer) {
 
   const isCorrect = normalize(choice) === normalize(answer);
   state.quizAnswered = true;
+
+  if (selectedButton) {
+    selectedButton.classList.add(isCorrect ? "quiz-option-correct" : "quiz-option-incorrect");
+  }
+  revealCorrectQuizOption(answer);
   disableQuizOptions();
 
   if (isCorrect) {
     addScore({ correct: 1, xp: 9, item: state.currentItem, itemCorrect: 1 });
-    feedbackLine.textContent = "Correct!";
-    feedbackLine.className = "feedback-line feedback-good";
+    feedbackLine.textContent = "";
     return;
   }
 
-  addScore({ incorrect: 1, xp: 1, item: state.currentItem, itemIncorrect: 1 });
-  feedbackLine.textContent = `Not quite. Correct answer: ${answer}`;
-  feedbackLine.className = "feedback-line feedback-bad";
+  addScore({ incorrect: 1, xp: -4, item: state.currentItem, itemIncorrect: 1 });
+  feedbackLine.textContent = "";
 }
 
 function handleTypingAnswer() {
@@ -322,14 +328,14 @@ function handleTypingAnswer() {
 
   if (isCorrect) {
     addScore({ correct: 1, xp: 12, item: state.currentItem, itemCorrect: 1 });
-    feedbackLine.textContent = "Great job. That is correct.";
-    feedbackLine.className = "feedback-line feedback-good";
+    setTypingOutcome(true);
+    feedbackLine.textContent = "";
     return;
   }
 
-  addScore({ incorrect: 1, xp: 1, item: state.currentItem, itemIncorrect: 1 });
-  feedbackLine.textContent = `Close. Correct answer: ${prompt.answerText}`;
-  feedbackLine.className = "feedback-line feedback-bad";
+  addScore({ incorrect: 1, xp: -5, item: state.currentItem, itemIncorrect: 1 });
+  setTypingOutcome(false);
+  feedbackLine.textContent = "";
 }
 
 function disableQuizOptions() {
@@ -337,6 +343,38 @@ function disableQuizOptions() {
   buttons.forEach((button) => {
     button.disabled = true;
   });
+}
+
+function revealCorrectQuizOption(answer) {
+  const buttons = quizOptions.querySelectorAll("button");
+  buttons.forEach((button) => {
+    if (normalize(button.textContent || "") === normalize(answer)) {
+      button.classList.add("quiz-option-correct");
+    }
+  });
+}
+
+function setTypingOutcome(isCorrect) {
+  typingInput.classList.remove("typing-input-correct", "typing-input-incorrect");
+  typingResultIcon.classList.remove("show", "typing-result-correct", "typing-result-incorrect");
+
+  if (isCorrect) {
+    typingInput.classList.add("typing-input-correct");
+    typingResultIcon.textContent = "✓";
+    typingResultIcon.classList.add("show", "typing-result-correct");
+    return;
+  }
+
+  typingInput.classList.add("typing-input-incorrect");
+  typingResultIcon.textContent = "✕";
+  typingResultIcon.classList.add("show", "typing-result-incorrect");
+}
+
+function clearTypingOutcome() {
+  typingInput.value = "";
+  typingInput.classList.remove("typing-input-correct", "typing-input-incorrect");
+  typingResultIcon.textContent = "";
+  typingResultIcon.classList.remove("show", "typing-result-correct", "typing-result-incorrect");
 }
 
 function getFilteredItems() {
@@ -530,7 +568,7 @@ function normalize(value) {
 function addScore({ correct = 0, incorrect = 0, xp = 0, item = null, itemCorrect = 0, itemIncorrect = 0 }) {
   progress.correct += correct;
   progress.incorrect += incorrect;
-  progress.xp += xp;
+  adjustXp(xp);
   updateStreak();
 
   if (item) {
@@ -541,11 +579,13 @@ function addScore({ correct = 0, incorrect = 0, xp = 0, item = null, itemCorrect
 
   persistProgress();
   renderStats();
-  renderModeLayout();
+  if (state.currentItem) {
+    metaLine.textContent = buildMetaLabel(state.currentItem);
+  }
 }
 
 function addXp(amount) {
-  progress.xp += amount;
+  adjustXp(amount);
   updateStreak();
   persistProgress();
   renderStats();
@@ -555,10 +595,12 @@ function renderStats() {
   const attempts = progress.correct + progress.incorrect;
   const accuracy = attempts ? Math.round((progress.correct / attempts) * 100) : 0;
   const masteredCount = LESSON_ITEMS.filter(isMasteredItem).length;
+  const level = getLevelFromXp(progress.xp);
   xpValue.textContent = progress.xp;
   streakValue.textContent = `${progress.streak} day${progress.streak === 1 ? "" : "s"}`;
   accuracyValue.textContent = `${accuracy}%`;
   masteredValue.textContent = String(masteredCount);
+  levelBadge.textContent = `Level ${level}`;
 }
 
 function updateStreak() {
@@ -666,6 +708,14 @@ function resetProgress() {
   setNextQuestion();
   feedbackLine.textContent = "Progress reset complete.";
   feedbackLine.className = "feedback-line";
+}
+
+function adjustXp(delta) {
+  progress.xp = Math.max(0, progress.xp + delta);
+}
+
+function getLevelFromXp(xp) {
+  return Math.floor(xp / XP_PER_LEVEL) + 1;
 }
 
 function isMasteredItem(item) {
