@@ -1,13 +1,13 @@
 :root {
-  --bg: #fff8ef;
+  --bg: #eefaff;
   --ink: #18212f;
   --ink-soft: #485369;
   --card: rgba(255, 255, 255, 0.84);
   --line: rgba(24, 33, 47, 0.12);
-  --accent: #ef5d3c;
-  --accent-strong: #ca4022;
-  --accent-soft: #ffd7cb;
-  --mint: #3ba99c;
+  --accent: #1aa7ad;
+  --accent-strong: #0b7f9e;
+  --accent-soft: #c7f3f5;
+  --mint: #56b3e4;
   --radius: 18px;
   --shadow: 0 22px 40px rgba(24, 33, 47, 0.12);
 }
@@ -21,7 +21,7 @@ body {
   min-height: 100vh;
   font-family: "Manrope", "Segoe UI", sans-serif;
   color: var(--ink);
-  background: radial-gradient(circle at 10% 10%, #fff6df 0%, var(--bg) 40%, #ffe9dd 100%);
+  background: radial-gradient(circle at 10% 10%, #e7fbff 0%, var(--bg) 40%, #dff1ff 100%);
   overflow-x: hidden;
 }
 
@@ -38,7 +38,7 @@ body {
   height: 340px;
   top: -90px;
   right: -80px;
-  background: radial-gradient(circle at center, rgba(239, 93, 60, 0.36), transparent 70%);
+  background: radial-gradient(circle at center, rgba(26, 167, 173, 0.34), transparent 70%);
 }
 
 .bg-glow-b {
@@ -46,12 +46,12 @@ body {
   height: 320px;
   bottom: -110px;
   left: -90px;
-  background: radial-gradient(circle at center, rgba(59, 169, 156, 0.28), transparent 70%);
+  background: radial-gradient(circle at center, rgba(86, 179, 228, 0.32), transparent 70%);
 }
 
 .app-shell {
   width: min(980px, 92vw);
-  margin: 2.5rem auto;
+  margin: 2.6rem auto 3rem;
   position: relative;
   z-index: 1;
   animation: rise-in 540ms ease;
@@ -74,16 +74,17 @@ body {
 }
 
 .hero-copy {
-  margin: 0;
+  margin: 0.3rem 0 0;
   color: var(--ink-soft);
   max-width: 62ch;
+  line-height: 1.55;
 }
 
 .stats {
-  margin-top: 1.2rem;
+  margin-top: 1.4rem;
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(145px, 1fr));
-  gap: 0.9rem;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 1rem;
 }
 
 .stat-card {
@@ -91,7 +92,7 @@ body {
   border: 1px solid var(--line);
   border-radius: var(--radius);
   box-shadow: var(--shadow);
-  padding: 0.9rem 1rem;
+  padding: 1rem 1.05rem;
 }
 
 .label {
@@ -107,20 +108,20 @@ body {
 }
 
 .controls {
-  margin-top: 1.1rem;
-  padding: 1rem;
+  margin-top: 1.3rem;
+  padding: 1.15rem;
   border-radius: var(--radius);
   background: var(--card);
   border: 1px solid var(--line);
   display: grid;
   grid-template-columns: 1fr;
-  gap: 0.9rem;
+  gap: 1rem;
 }
 
 .control-grid {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 0.8rem;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 0.95rem;
 }
 
 .field {
@@ -130,7 +131,9 @@ body {
 
 label {
   font-weight: 700;
-  font-size: 0.9rem;
+  font-size: 0.88rem;
+  letter-spacing: 0.02em;
+  color: var(--ink-soft);
 }
 
 select,
@@ -144,8 +147,29 @@ input {
   width: 100%;
   border-radius: 12px;
   border: 1px solid var(--line);
-  padding: 0.72rem 0.85rem;
+  padding: 0.78rem 0.9rem;
   background: #fff;
+}
+
+.control-footer {
+  display: flex;
+  gap: 1rem;
+  align-items: flex-end;
+  justify-content: space-between;
+}
+
+.mode-wrap {
+  display: grid;
+  gap: 0.45rem;
+}
+
+.mini-label {
+  margin: 0;
+  font-size: 0.82rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+  font-weight: 700;
 }
 
 .mode-toggle {
@@ -165,18 +189,20 @@ input {
 }
 
 .mode-btn.active {
-  background: linear-gradient(120deg, var(--accent) 0%, #f07d43 100%);
+  background: linear-gradient(120deg, var(--accent) 0%, #4abbe9 100%);
   color: #fff;
   border-color: transparent;
 }
 
 .study-card {
-  margin-top: 1.1rem;
+  margin-top: 1.3rem;
   background: var(--card);
   border: 1px solid var(--line);
   border-radius: calc(var(--radius) + 2px);
-  padding: 1.15rem;
+  padding: 1.35rem;
   box-shadow: var(--shadow);
+  display: grid;
+  gap: 0.32rem;
 }
 
 .mode-title {
@@ -186,14 +212,15 @@ input {
 }
 
 .prompt-line {
-  margin: 0.7rem 0 0;
+  margin: 0.6rem 0 0;
   color: var(--ink-soft);
 }
 
 .question-line {
-  margin: 0.35rem 0;
+  margin: 0.55rem 0 0.3rem;
   font-size: clamp(1.6rem, 4vw, 2.2rem);
   font-family: "Fraunces", Georgia, serif;
+  line-height: 1.2;
 }
 
 .hint-line {
@@ -202,13 +229,13 @@ input {
 }
 
 .meta-line {
-  margin: 0.45rem 0 0;
+  margin: 0.52rem 0 0;
   color: var(--ink-soft);
   font-size: 0.9rem;
 }
 
 .quiz-options {
-  margin-top: 1rem;
+  margin-top: 1.15rem;
   display: grid;
   gap: 0.65rem;
 }
@@ -224,19 +251,19 @@ input {
 }
 
 .quiz-option:hover {
-  border-color: rgba(239, 93, 60, 0.4);
+  border-color: rgba(26, 167, 173, 0.42);
 }
 
 .typing-form {
   display: grid;
   grid-template-columns: 1fr auto;
   gap: 0.6rem;
-  margin-top: 1rem;
+  margin-top: 1.15rem;
 }
 
 .feedback-line {
   min-height: 1.5em;
-  margin: 0.9rem 0 0;
+  margin: 1rem 0 0;
   font-weight: 700;
 }
 
@@ -249,10 +276,11 @@ input {
 }
 
 .actions {
-  margin-top: 0.9rem;
+  margin-top: 1.1rem;
   display: flex;
   gap: 0.7rem;
-  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: center;
 }
 
 button {
@@ -261,7 +289,7 @@ button {
   padding: 0.68rem 1rem;
   cursor: pointer;
   font-weight: 700;
-  background: linear-gradient(120deg, var(--accent) 0%, #f07d43 100%);
+  background: linear-gradient(120deg, var(--accent) 0%, #4abbe9 100%);
   color: #fff;
 }
 
@@ -275,6 +303,7 @@ button.danger {
   background: #fff;
   color: #ad2f22;
   border: 1px solid rgba(173, 47, 34, 0.35);
+  white-space: nowrap;
 }
 
 button:disabled {
@@ -282,14 +311,9 @@ button:disabled {
   cursor: not-allowed;
 }
 
-.utility-actions {
-  display: flex;
-  justify-content: flex-end;
-}
-
 .tips {
-  margin-top: 1.1rem;
-  padding: 1rem;
+  margin-top: 1.3rem;
+  padding: 1.1rem 1.1rem 1.15rem;
   border-radius: var(--radius);
   background: linear-gradient(130deg, rgba(59, 169, 156, 0.1), rgba(255, 255, 255, 0.74));
   border: 1px solid rgba(59, 169, 156, 0.22);
@@ -309,6 +333,22 @@ button:disabled {
   margin-top: 0.5rem;
 }
 
+.shortcuts-note {
+  margin: 0.45rem 0 0;
+  color: var(--ink-soft);
+  font-size: 0.84rem;
+}
+
+kbd {
+  border: 1px solid var(--line);
+  border-bottom-width: 2px;
+  border-radius: 6px;
+  padding: 0.07rem 0.35rem;
+  font-family: inherit;
+  font-size: 0.8rem;
+  background: #fff;
+}
+
 .hidden {
   display: none;
 }
@@ -325,19 +365,21 @@ button:disabled {
 }
 
 @media (max-width: 780px) {
-  .stats {
-    grid-template-columns: 1fr;
+  .control-footer {
+    flex-direction: column;
+    align-items: stretch;
   }
 
-  .control-grid {
-    grid-template-columns: 1fr;
+  #resetProgressBtn {
+    width: 100%;
   }
 
-  .utility-actions {
-    justify-content: stretch;
+  .actions {
+    flex-direction: column;
+    align-items: stretch;
   }
 
-  .utility-actions button {
+  .actions button {
     width: 100%;
   }
 
