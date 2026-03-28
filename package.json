@@ -1,0 +1,14 @@
+{
+  "name": "learn-tagalog-app",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Interactive Tagalog study app for English speakers",
+  "scripts": {
+    "dev": "vite --open",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "devDependencies": {
+    "vite": "^8.0.3"
+  }
+}
