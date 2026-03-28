@@ -133,6 +133,38 @@ const CORE_PACK_V2_ITEMS = [
   { category: "Directions", english: "Turn right", tagalog: "Kumanan ka", pronunciation: "koo-mah-NAN kah" }
 ];
 
+const SURVIVAL_TAGALOG_PHRASES = [
+  { english: "Hello", tagalog: "Kumusta" },
+  { english: "How are you?", tagalog: "Kumusta ka?" },
+  { english: "Thank you", tagalog: "Salamat" },
+  { english: "Please", tagalog: "Pakiusap" },
+  { english: "Excuse me", tagalog: "Mawalang galang" },
+  { english: "Sorry", tagalog: "Pasensya na" },
+  { english: "Yes", tagalog: "Oo" },
+  { english: "No", tagalog: "Hindi" },
+  { english: "Where is the bathroom?", tagalog: "Nasaan ang banyo?" },
+  { english: "Can you help me?", tagalog: "Pwede mo ba akong tulungan?" },
+  { english: "How much is this?", tagalog: "Magkano ito?" },
+  { english: "Do you speak English?", tagalog: "Nagsasalita ka ba ng Ingles?" },
+  { english: "Please repeat", tagalog: "Pakiulit" },
+  { english: "Speak slowly", tagalog: "Dahan-dahan magsalita" },
+  { english: "I don't understand", tagalog: "Hindi ko maintindihan" },
+  { english: "I need help", tagalog: "Kailangan ko ng tulong" },
+  { english: "I am on my way", tagalog: "Papunta na ako" },
+  { english: "Water", tagalog: "Tubig" },
+  { english: "Rice", tagalog: "Kanin" },
+  { english: "I want to eat", tagalog: "Gusto kong kumain" },
+  { english: "How much is the fare?", tagalog: "Magkano ang pamasahe?" },
+  { english: "I need a taxi", tagalog: "Kailangan ko ng taxi" },
+  { english: "Turn left", tagalog: "Kumaliwa ka" },
+  { english: "Turn right", tagalog: "Kumanan ka" },
+  { english: "Straight ahead", tagalog: "Derecho lang" }
+];
+
+const SURVIVAL_TAGALOG_SIGNATURES = new Set(
+  SURVIVAL_TAGALOG_PHRASES.map((item) => getCustomSignature(item.english, item.tagalog))
+);
+
 const STORAGE_KEY = "johns_tagalog_coach_progress_v1";
 const LEGACY_STORAGE_KEYS = [
   "aral_tagalog_progress_v1",
@@ -226,6 +258,7 @@ const BASE_ITEMS = [...LESSON_ITEMS, ...CORE_PACK_V2_ITEMS].map((item) => ({
   ...item,
   unit: CATEGORY_UNITS[item.category] || 1,
   difficulty: resolveItemDifficulty(item),
+  paths: SURVIVAL_TAGALOG_SIGNATURES.has(getCustomSignature(item.english, item.tagalog)) ? ["survival"] : [],
   source: "base",
   grammar: PHRASE_GRAMMAR[item.tagalog] || CATEGORY_GRAMMAR[item.category] || "Study word order and markers in this phrase."
 }));
@@ -711,12 +744,17 @@ function getCustomStudyItems() {
       CATEGORY_GRAMMAR[item.category] ||
       "Study word order and markers in this phrase.",
     unit: null,
+    paths: [],
     source: "custom"
   }));
 }
 
 function getPathFilteredItems() {
   const items = getStudyItems();
+  if (state.path === "survival") {
+    return items.filter((item) => Array.isArray(item.paths) && item.paths.includes("survival"));
+  }
+
   if (state.path === "custom") {
     return items.filter((item) => item.source === "custom");
   }
