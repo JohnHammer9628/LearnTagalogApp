@@ -43,6 +43,11 @@ const LEGACY_STORAGE_KEYS = [
 const XP_PER_LEVEL = 100;
 const DEFAULT_GOAL_TARGET = 10;
 const MAX_REVIEW_QUEUE = 25;
+const REVIEW_DELAYS_MS = {
+  again: 15 * 60 * 1000,
+  good: 12 * 60 * 60 * 1000,
+  easy: 3 * 24 * 60 * 60 * 1000
+};
 
 const CATEGORY_UNITS = {
   Greetings: 1,
@@ -112,6 +117,8 @@ const goalRing = document.getElementById("goalRing");
 const goalProgressText = document.getElementById("goalProgressText");
 const goalStatusText = document.getElementById("goalStatusText");
 const reviewQueueCount = document.getElementById("reviewQueueCount");
+const ratingBar = document.getElementById("ratingBar");
+const ratingButtons = Array.from(document.querySelectorAll(".rating-btn"));
 const customWordForm = document.getElementById("customWordForm");
 const customEnglish = document.getElementById("customEnglish");
 const customTagalog = document.getElementById("customTagalog");
@@ -171,6 +178,12 @@ function bindEvents() {
   directionSelect.addEventListener("change", (event) => {
     state.direction = event.target.value;
     setNextQuestion();
+  });
+
+  ratingButtons.forEach((button) => {
+    button.addEventListener("click", () => {
+      scheduleCurrentItem(button.dataset.rating);
+    });
   });
 
   goalButtons.forEach((button) => {
@@ -236,7 +249,7 @@ function bindEvents() {
 function setNextQuestion() {
   const pool = getFilteredItems();
   if (!pool.length) {
-    questionLine.textContent = "No items in this category yet.";
+    questionLine.textContent = state.focus === "due" ? "No due cards right now." : "No items in this category yet.";
     promptLine.textContent = "";
     hintLine.textContent = "";
     metaLine.textContent = "";
@@ -244,6 +257,7 @@ function setNextQuestion() {
     quizOptions.innerHTML = "";
     clearTypingOutcome();
     hideCoachingCard();
+    hideRatingBar();
     pronounceBtn.disabled = true;
     return;
   }
@@ -256,6 +270,7 @@ function setNextQuestion() {
   feedbackLine.className = "feedback-line";
   clearTypingOutcome();
   hideCoachingCard();
+  hideRatingBar();
   pronounceBtn.disabled = false;
 
   renderModeLayout();
@@ -340,6 +355,7 @@ function handlePrimaryAction() {
     feedbackLine.textContent = `Answer: ${prompt.answerText}`;
     feedbackLine.className = "feedback-line";
     hideCoachingCard();
+    showRatingBar();
     return;
   }
 
@@ -351,6 +367,8 @@ function handlePrimaryAction() {
     ensureSeenTracked();
     revealCorrectQuizOption(prompt.answerText);
     disableQuizOptions();
+    hideCoachingCard();
+    showRatingBar();
     return;
   }
 
@@ -359,6 +377,7 @@ function handlePrimaryAction() {
   feedbackLine.textContent = `Answer: ${prompt.answerText}`;
   feedbackLine.className = "feedback-line";
   hideCoachingCard();
+  showRatingBar();
 }
 
 function handleQuizAnswer(choice, answer, selectedButton) {
@@ -383,6 +402,7 @@ function handleQuizAnswer(choice, answer, selectedButton) {
     addScore({ correct: 1, xp: 9, item: state.currentItem, itemCorrect: 1 });
     feedbackLine.textContent = "";
     hideCoachingCard();
+    showRatingBar();
     return;
   }
 
@@ -390,6 +410,7 @@ function handleQuizAnswer(choice, answer, selectedButton) {
   addScore({ incorrect: 1, xp: -4, item: state.currentItem, itemIncorrect: 1 });
   feedbackLine.textContent = "";
   showWrongAnswerCoaching(state.currentItem, prompt);
+  showRatingBar();
 }
 
 function handleTypingAnswer() {
@@ -414,6 +435,7 @@ function handleTypingAnswer() {
     setTypingOutcome(true);
     feedbackLine.textContent = "";
     hideCoachingCard();
+    showRatingBar();
     return;
   }
 
@@ -422,6 +444,7 @@ function handleTypingAnswer() {
   setTypingOutcome(false);
   feedbackLine.textContent = "";
   showWrongAnswerCoaching(state.currentItem, prompt);
+  showRatingBar();
 }
 
 function disableQuizOptions() {
@@ -467,6 +490,10 @@ function getFilteredItems() {
   const byCategory =
     state.category === "all" ? LESSON_ITEMS : LESSON_ITEMS.filter((item) => item.category === state.category);
 
+  if (state.focus === "due") {
+    return byCategory.filter(isDueItem);
+  }
+
   if (state.focus === "new") {
     const onlyNew = byCategory.filter((item) => getItemStats(item).seen === 0);
     return onlyNew.length ? onlyNew : byCategory;
@@ -482,6 +509,22 @@ function getFilteredItems() {
   }
 
   return byCategory;
+}
+
+function getItemDueAt(item) {
+  if (!item || !progress.reviewSchedule || typeof progress.reviewSchedule !== "object") {
+    return null;
+  }
+  const dueAt = Number(progress.reviewSchedule[itemKey(item)]);
+  return Number.isFinite(dueAt) && dueAt > 0 ? dueAt : null;
+}
+
+function isDueItem(item) {
+  const dueAt = getItemDueAt(item);
+  if (!dueAt) {
+    return false;
+  }
+  return dueAt <= Date.now();
 }
 
 function isWeakItem(item) {
@@ -516,6 +559,14 @@ function getNextItem(items, previous) {
 
   if (!pool.length) {
     return items[0];
+  }
+
+  if (state.focus === "smart") {
+    const duePool = pool.filter(isDueItem);
+    if (duePool.length) {
+      const dueWeights = duePool.map(getSmartWeight);
+      return weightedRandom(duePool, dueWeights);
+    }
   }
 
   if (state.focus !== "smart") {
@@ -695,6 +746,57 @@ function hideCoachingCard() {
   coachingHint.textContent = "";
 }
 
+function showRatingBar() {
+  if (!ratingBar) {
+    return;
+  }
+  ratingButtons.forEach((button) => {
+    button.classList.remove("active");
+    button.setAttribute("aria-pressed", "false");
+  });
+  ratingBar.classList.remove("hidden");
+}
+
+function hideRatingBar() {
+  if (!ratingBar) {
+    return;
+  }
+  ratingBar.classList.add("hidden");
+  ratingButtons.forEach((button) => {
+    button.classList.remove("active");
+    button.setAttribute("aria-pressed", "false");
+  });
+}
+
+function scheduleCurrentItem(rating) {
+  if (!state.currentItem || !rating || !REVIEW_DELAYS_MS[rating]) {
+    return;
+  }
+
+  const key = itemKey(state.currentItem);
+  const now = Date.now();
+  const dueAt = now + REVIEW_DELAYS_MS[rating];
+  if (!progress.reviewSchedule || typeof progress.reviewSchedule !== "object") {
+    progress.reviewSchedule = {};
+  }
+  progress.reviewSchedule[key] = dueAt;
+
+  if (rating === "again") {
+    addToReviewQueue(state.currentItem);
+  } else {
+    removeFromReviewQueue(state.currentItem);
+  }
+
+  ratingButtons.forEach((button) => {
+    const active = button.dataset.rating === rating;
+    button.classList.toggle("active", active);
+    button.setAttribute("aria-pressed", String(active));
+  });
+
+  persistProgress();
+  renderStats();
+}
+
 function ensureSeenTracked() {
   if (!state.currentItem || state.seenTracked) {
     return;
@@ -859,6 +961,22 @@ function normalizeReviewQueue(rawQueue) {
   return normalized.slice(0, MAX_REVIEW_QUEUE);
 }
 
+function normalizeReviewSchedule(rawSchedule) {
+  if (!rawSchedule || typeof rawSchedule !== "object" || Array.isArray(rawSchedule)) {
+    return {};
+  }
+
+  const normalized = {};
+  Object.entries(rawSchedule).forEach(([key, value]) => {
+    const dueAt = Number(value);
+    if (typeof key !== "string" || !key || !Number.isFinite(dueAt) || dueAt <= 0) {
+      return;
+    }
+    normalized[key] = dueAt;
+  });
+  return normalized;
+}
+
 function loadProgress() {
   try {
     let raw = localStorage.getItem(STORAGE_KEY);
@@ -895,6 +1013,7 @@ function loadProgress() {
       lastStudyDate: parsed.lastStudyDate || null,
       goalTarget: Number(parsed.goalTarget) || DEFAULT_GOAL_TARGET,
       reviewQueue: normalizeReviewQueue(parsed.reviewQueue),
+      reviewSchedule: normalizeReviewSchedule(parsed.reviewSchedule),
       itemStats
     };
   } catch {
@@ -911,6 +1030,7 @@ function defaultProgress() {
     lastStudyDate: null,
     goalTarget: DEFAULT_GOAL_TARGET,
     reviewQueue: [],
+    reviewSchedule: {},
     itemStats: {}
   };
 }
@@ -930,6 +1050,7 @@ function resetProgress() {
   progress.streak = 0;
   progress.lastStudyDate = null;
   progress.reviewQueue = [];
+  progress.reviewSchedule = {};
   progress.itemStats = {};
   persistProgress();
   renderStats();

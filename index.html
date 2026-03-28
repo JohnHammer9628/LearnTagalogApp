@@ -78,6 +78,7 @@
               <option value="smart">Smart Mix</option>
               <option value="new">New First</option>
               <option value="review">Review Weak Items</option>
+              <option value="due">Due Only</option>
             </select>
           </div>
 
@@ -156,6 +157,14 @@
             <p class="coaching-line"><strong>Correct:</strong> <span id="coachingAnswer"></span></p>
             <p class="coaching-line"><strong>Pronunciation:</strong> <span id="coachingPronunciation"></span></p>
             <p id="coachingHint" class="coaching-hint"></p>
+          </section>
+          <section id="ratingBar" class="rating-bar hidden" aria-label="Review scheduling">
+            <p class="rating-label">How hard was this card?</p>
+            <div class="rating-actions" role="group" aria-label="Schedule next review">
+              <button type="button" class="rating-btn" data-rating="again">Again</button>
+              <button type="button" class="rating-btn" data-rating="good">Good</button>
+              <button type="button" class="rating-btn" data-rating="easy">Easy</button>
+            </div>
           </section>
 
           <div class="actions">

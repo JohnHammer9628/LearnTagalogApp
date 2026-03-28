@@ -471,6 +471,48 @@ input {
   font-size: 0.88rem;
 }
 
+.rating-bar {
+  margin-top: 0.45rem;
+  padding: 0.65rem 0.72rem;
+  border-radius: 12px;
+  border: 1px solid rgba(24, 33, 47, 0.12);
+  background: rgba(255, 255, 255, 0.75);
+  display: grid;
+  gap: 0.48rem;
+}
+
+.rating-label {
+  margin: 0;
+  color: #41516a;
+  font-size: 0.86rem;
+  font-weight: 700;
+}
+
+.rating-actions {
+  display: flex;
+  gap: 0.48rem;
+  flex-wrap: wrap;
+}
+
+.rating-btn {
+  border: 1px solid rgba(24, 33, 47, 0.14);
+  background: #fff;
+  color: var(--ink);
+  border-radius: 999px;
+  padding: 0.42rem 0.76rem;
+  font-weight: 700;
+}
+
+.rating-btn:hover {
+  border-color: rgba(26, 167, 173, 0.42);
+}
+
+.rating-btn.active {
+  border-color: rgba(26, 167, 173, 0.2);
+  background: linear-gradient(120deg, var(--accent) 0%, #49c4e8 100%);
+  color: #fff;
+}
+
 .feedback-good {
   color: #0f7c61;
 }
@@ -810,6 +852,15 @@ kbd {
 
   .study-head-main {
     justify-content: space-between;
+  }
+
+  .rating-actions {
+    width: 100%;
+  }
+
+  .rating-btn {
+    flex: 1;
+    text-align: center;
   }
 
   .icon-btn {
