@@ -12,6 +12,10 @@ Johns Tagalog Coach is a lightweight web app for English speakers learning Tagal
 - Adaptive study focus (`Smart Mix`, `New First`, `Review Weak Items`)
 - XP, accuracy tracking, and daily streak
 - Per-card mastery tracking (seen count + mastery percentage)
+- Spaced review with difficulty ratings and due-date scheduling
+- Daily challenges and milestone badges
+- Lesson difficulty tags with difficulty-aware quiz decoys
+- Custom vocabulary packs with CRUD and JSON import/export
 - Dashboard counters for `Mastered`
 - Keyboard shortcuts (`Enter` to reveal/check, `N` for next)
 - Reset progress control
@@ -52,7 +56,6 @@ Now when we edit files, the page refreshes automatically.
 
 - Add audio pronunciation playback
 - Add phrase-level lessons and grammar notes
-- Add progress export/import
 
 ## License
 
