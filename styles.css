@@ -443,6 +443,34 @@ input {
   display: none;
 }
 
+.coaching-card {
+  margin-top: 0.25rem;
+  padding: 0.72rem 0.78rem;
+  border-radius: 12px;
+  border: 1px solid rgba(26, 167, 173, 0.25);
+  background: linear-gradient(135deg, rgba(26, 167, 173, 0.08), rgba(73, 196, 232, 0.08));
+}
+
+.coaching-title {
+  margin: 0 0 0.38rem;
+  font-size: 0.84rem;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  color: #0b7f9e;
+}
+
+.coaching-line {
+  margin: 0.25rem 0 0;
+  font-size: 0.9rem;
+  color: var(--ink);
+}
+
+.coaching-hint {
+  margin: 0.42rem 0 0;
+  color: #355a67;
+  font-size: 0.88rem;
+}
+
 .feedback-good {
   color: #0f7c61;
 }

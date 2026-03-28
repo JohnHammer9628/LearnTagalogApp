@@ -94,6 +94,10 @@ const questionLine = document.getElementById("questionLine");
 const hintLine = document.getElementById("hintLine");
 const metaLine = document.getElementById("metaLine");
 const feedbackLine = document.getElementById("feedbackLine");
+const coachingCard = document.getElementById("coachingCard");
+const coachingAnswer = document.getElementById("coachingAnswer");
+const coachingPronunciation = document.getElementById("coachingPronunciation");
+const coachingHint = document.getElementById("coachingHint");
 const quizOptions = document.getElementById("quizOptions");
 const typingForm = document.getElementById("typingForm");
 const typingInput = document.getElementById("typingInput");
@@ -239,6 +243,7 @@ function setNextQuestion() {
     feedbackLine.textContent = "";
     quizOptions.innerHTML = "";
     clearTypingOutcome();
+    hideCoachingCard();
     pronounceBtn.disabled = true;
     return;
   }
@@ -250,6 +255,7 @@ function setNextQuestion() {
   feedbackLine.textContent = "";
   feedbackLine.className = "feedback-line";
   clearTypingOutcome();
+  hideCoachingCard();
   pronounceBtn.disabled = false;
 
   renderModeLayout();
@@ -267,7 +273,7 @@ function renderModeLayout() {
   promptLine.textContent = prompt.promptLabel;
   questionLine.textContent = prompt.questionText;
   hintLine.textContent = prompt.hintText;
-  metaLine.textContent = buildMetaLabel(state.currentItem);
+  metaLine.textContent = buildMetaLabel(state.currentItem, { includeCategory: state.mode !== "quiz" });
 
   if (state.mode === "flashcard") {
     modeTitle.textContent = "Flashcards";
@@ -333,6 +339,7 @@ function handlePrimaryAction() {
     ensureSeenTracked();
     feedbackLine.textContent = `Answer: ${prompt.answerText}`;
     feedbackLine.className = "feedback-line";
+    hideCoachingCard();
     return;
   }
 
@@ -351,6 +358,7 @@ function handlePrimaryAction() {
   addXp(1);
   feedbackLine.textContent = `Answer: ${prompt.answerText}`;
   feedbackLine.className = "feedback-line";
+  hideCoachingCard();
 }
 
 function handleQuizAnswer(choice, answer, selectedButton) {
@@ -359,6 +367,7 @@ function handleQuizAnswer(choice, answer, selectedButton) {
   }
 
   ensureSeenTracked();
+  const prompt = getPromptConfig(state.currentItem);
 
   const isCorrect = normalize(choice) === normalize(answer);
   state.quizAnswered = true;
@@ -373,12 +382,14 @@ function handleQuizAnswer(choice, answer, selectedButton) {
     removeFromReviewQueue(state.currentItem);
     addScore({ correct: 1, xp: 9, item: state.currentItem, itemCorrect: 1 });
     feedbackLine.textContent = "";
+    hideCoachingCard();
     return;
   }
 
   addToReviewQueue(state.currentItem);
   addScore({ incorrect: 1, xp: -4, item: state.currentItem, itemIncorrect: 1 });
   feedbackLine.textContent = "";
+  showWrongAnswerCoaching(state.currentItem, prompt);
 }
 
 function handleTypingAnswer() {
@@ -402,6 +413,7 @@ function handleTypingAnswer() {
     addScore({ correct: 1, xp: 12, item: state.currentItem, itemCorrect: 1 });
     setTypingOutcome(true);
     feedbackLine.textContent = "";
+    hideCoachingCard();
     return;
   }
 
@@ -409,6 +421,7 @@ function handleTypingAnswer() {
   addScore({ incorrect: 1, xp: -5, item: state.currentItem, itemIncorrect: 1 });
   setTypingOutcome(false);
   feedbackLine.textContent = "";
+  showWrongAnswerCoaching(state.currentItem, prompt);
 }
 
 function disableQuizOptions() {
@@ -568,11 +581,16 @@ function getPromptConfig(item) {
   };
 }
 
-function buildMetaLabel(item) {
+function buildMetaLabel(item, options = {}) {
+  const includeCategory = options.includeCategory !== false;
   const stats = getItemStats(item);
   const attempts = stats.correct + stats.incorrect;
   const mastery = attempts ? `${Math.round((stats.correct / attempts) * 100)}%` : "N/A";
-  return `Category: ${item.category} | Seen: ${stats.seen} | Mastery: ${mastery}`;
+  const parts = [`Seen: ${stats.seen}`, `Mastery: ${mastery}`];
+  if (includeCategory) {
+    parts.unshift(`Category: ${item.category}`);
+  }
+  return parts.join(" | ");
 }
 
 function getItemStats(item) {
@@ -650,6 +668,33 @@ function removeFromReviewQueue(item) {
   progress.reviewQueue = progress.reviewQueue.filter((entry) => entry !== key);
 }
 
+function getCoachingHint(item) {
+  if (item?.grammar) {
+    return item.grammar;
+  }
+  return PHRASE_GRAMMAR[item?.tagalog] || CATEGORY_GRAMMAR[item?.category] || "Watch word order and common particles in this phrase.";
+}
+
+function showWrongAnswerCoaching(item, prompt) {
+  if (!coachingCard || !item || !prompt) {
+    return;
+  }
+  coachingAnswer.textContent = prompt.answerText;
+  coachingPronunciation.textContent = item.pronunciation || "No pronunciation available yet.";
+  coachingHint.textContent = getCoachingHint(item);
+  coachingCard.classList.remove("hidden");
+}
+
+function hideCoachingCard() {
+  if (!coachingCard) {
+    return;
+  }
+  coachingCard.classList.add("hidden");
+  coachingAnswer.textContent = "";
+  coachingPronunciation.textContent = "";
+  coachingHint.textContent = "";
+}
+
 function ensureSeenTracked() {
   if (!state.currentItem || state.seenTracked) {
     return;
@@ -701,7 +746,7 @@ function addScore({ correct = 0, incorrect = 0, xp = 0, item = null, itemCorrect
   persistProgress();
   renderStats();
   if (state.currentItem) {
-    metaLine.textContent = buildMetaLabel(state.currentItem);
+    metaLine.textContent = buildMetaLabel(state.currentItem, { includeCategory: state.mode !== "quiz" });
   }
 }
 
