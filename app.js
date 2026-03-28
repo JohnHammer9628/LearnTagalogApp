@@ -34,8 +34,12 @@ const LESSON_ITEMS = [
   { category: "Food", english: "I want to eat", tagalog: "Gusto kong kumain", pronunciation: "GOOS-toh kong koo-MAH-in" }
 ];
 
-const STORAGE_KEY = "aral_tagalog_progress_v1";
-const LEGACY_STORAGE_KEYS = ["tagalog_sprint_progress_v2", "tagalog_sprint_progress_v1"];
+const STORAGE_KEY = "johns_tagalog_coach_progress_v1";
+const LEGACY_STORAGE_KEYS = [
+  "aral_tagalog_progress_v1",
+  "tagalog_sprint_progress_v2",
+  "tagalog_sprint_progress_v1"
+];
 
 const categorySelect = document.getElementById("categorySelect");
 const focusSelect = document.getElementById("focusSelect");

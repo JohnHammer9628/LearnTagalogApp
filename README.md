@@ -1,6 +1,6 @@
-# AralTagalog
+# Johns Tagalog Coach
 
-AralTagalog is a lightweight web app for English speakers learning Tagalog through active recall.
+Johns Tagalog Coach is a lightweight web app for English speakers learning Tagalog through active recall.
 
 ## Features
 
