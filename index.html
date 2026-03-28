@@ -41,10 +41,31 @@
       </section>
 
       <section class="controls">
-        <label for="categorySelect">Category</label>
-        <select id="categorySelect" aria-label="Choose a category">
-          <option value="all">All</option>
-        </select>
+        <div class="control-grid">
+          <div class="field">
+            <label for="categorySelect">Category</label>
+            <select id="categorySelect" aria-label="Choose a category">
+              <option value="all">All</option>
+            </select>
+          </div>
+
+          <div class="field">
+            <label for="focusSelect">Study Focus</label>
+            <select id="focusSelect" aria-label="Choose study focus">
+              <option value="smart">Smart Mix</option>
+              <option value="new">New First</option>
+              <option value="review">Review Weak Items</option>
+            </select>
+          </div>
+
+          <div class="field">
+            <label for="directionSelect">Direction</label>
+            <select id="directionSelect" aria-label="Choose translation direction">
+              <option value="tl_to_en">Tagalog -> English</option>
+              <option value="en_to_tl">English -> Tagalog</option>
+            </select>
+          </div>
+        </div>
 
         <div class="mode-toggle" role="tablist" aria-label="Study mode">
           <button class="mode-btn active" data-mode="flashcard" role="tab" aria-selected="true">
@@ -55,6 +76,10 @@
             Typing
           </button>
         </div>
+
+        <div class="utility-actions">
+          <button id="resetProgressBtn" class="danger" type="button">Reset Progress</button>
+        </div>
       </section>
 
       <section class="study-card">
@@ -62,6 +87,7 @@
         <p id="promptLine" class="prompt-line"></p>
         <h2 id="questionLine" class="question-line"></h2>
         <p id="hintLine" class="hint-line"></p>
+        <p id="metaLine" class="meta-line"></p>
 
         <div id="quizOptions" class="quiz-options hidden" aria-live="polite"></div>
 

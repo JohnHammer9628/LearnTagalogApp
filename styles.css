@@ -117,6 +117,17 @@ body {
   gap: 0.9rem;
 }
 
+.control-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.8rem;
+}
+
+.field {
+  display: grid;
+  gap: 0.4rem;
+}
+
 label {
   font-weight: 700;
   font-size: 0.9rem;
@@ -190,6 +201,12 @@ input {
   color: var(--ink-soft);
 }
 
+.meta-line {
+  margin: 0.45rem 0 0;
+  color: var(--ink-soft);
+  font-size: 0.9rem;
+}
+
 .quiz-options {
   margin-top: 1rem;
   display: grid;
@@ -254,9 +271,20 @@ button.ghost {
   border: 1px solid var(--line);
 }
 
+button.danger {
+  background: #fff;
+  color: #ad2f22;
+  border: 1px solid rgba(173, 47, 34, 0.35);
+}
+
 button:disabled {
   opacity: 0.55;
   cursor: not-allowed;
+}
+
+.utility-actions {
+  display: flex;
+  justify-content: flex-end;
 }
 
 .tips {
@@ -299,6 +327,18 @@ button:disabled {
 @media (max-width: 780px) {
   .stats {
     grid-template-columns: 1fr;
+  }
+
+  .control-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .utility-actions {
+    justify-content: stretch;
+  }
+
+  .utility-actions button {
+    width: 100%;
   }
 
   .typing-form {

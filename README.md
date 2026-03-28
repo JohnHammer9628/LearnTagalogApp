@@ -8,7 +8,12 @@ LearnTagalogApp is a lightweight web app for English speakers learning Tagalog t
 - Multiple-choice quiz mode
 - Typing challenge mode
 - Category filtering (Greetings, Basics, Questions, Everyday, Numbers, Food)
+- Direction toggle (`Tagalog -> English` or `English -> Tagalog`)
+- Adaptive study focus (`Smart Mix`, `New First`, `Review Weak Items`)
 - XP, accuracy tracking, and daily streak
+- Per-card mastery tracking (seen count + mastery percentage)
+- Keyboard shortcuts (`Enter` to reveal/check, `N` for next)
+- Reset progress control
 - Local progress persistence via browser `localStorage`
 
 ## Tech Stack
