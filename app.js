@@ -43,6 +43,7 @@ const LEGACY_STORAGE_KEYS = [
 const XP_PER_LEVEL = 100;
 const DEFAULT_GOAL_TARGET = 10;
 const MAX_REVIEW_QUEUE = 25;
+const CUSTOM_PACK_VERSION = 1;
 const REVIEW_DELAYS_MS = {
   again: 15 * 60 * 1000,
   good: 12 * 60 * 60 * 1000,
@@ -134,6 +135,12 @@ const customTagalog = document.getElementById("customTagalog");
 const customCategory = document.getElementById("customCategory");
 const customPronunciation = document.getElementById("customPronunciation");
 const customGrammar = document.getElementById("customGrammar");
+const customSubmitBtn = document.getElementById("customSubmitBtn");
+const cancelCustomEditBtn = document.getElementById("cancelCustomEditBtn");
+const customStatusLine = document.getElementById("customStatusLine");
+const exportCustomBtn = document.getElementById("exportCustomBtn");
+const importCustomBtn = document.getElementById("importCustomBtn");
+const importCustomInput = document.getElementById("importCustomInput");
 const customItemsList = document.getElementById("customItemsList");
 const modeButtons = Array.from(document.querySelectorAll(".mode-btn"));
 
@@ -148,7 +155,8 @@ const state = {
   currentItem: null,
   answerRevealed: false,
   quizAnswered: false,
-  seenTracked: false
+  seenTracked: false,
+  editingCustomId: null
 };
 
 let session = createEmptySession();
@@ -160,19 +168,33 @@ function init() {
   bindEvents();
   focusSelect.value = state.focus;
   directionSelect.value = state.direction;
+  pathSelect.value = state.path;
   syncGoalButtons();
+  renderCustomItems();
   setNextQuestion();
   renderStats();
 }
 
 function populateCategories() {
-  const categories = Array.from(new Set(LESSON_ITEMS.map((item) => item.category))).sort();
+  const categories = Array.from(new Set(getStudyItems().map((item) => item.category))).sort();
+  categorySelect.innerHTML = "";
+  const allOption = document.createElement("option");
+  allOption.value = "all";
+  allOption.textContent = "All";
+  categorySelect.append(allOption);
+
   categories.forEach((category) => {
     const option = document.createElement("option");
     option.value = category;
     option.textContent = category;
     categorySelect.append(option);
   });
+
+  const categoryStillValid = state.category === "all" || categories.includes(state.category);
+  if (!categoryStillValid) {
+    state.category = "all";
+  }
+  categorySelect.value = state.category;
 }
 
 function bindEvents() {
@@ -188,6 +210,11 @@ function bindEvents() {
 
   directionSelect.addEventListener("change", (event) => {
     state.direction = event.target.value;
+    setNextQuestion();
+  });
+
+  pathSelect.addEventListener("change", (event) => {
+    state.path = event.target.value;
     setNextQuestion();
   });
 
@@ -231,6 +258,12 @@ function bindEvents() {
   resetProgressBtn.addEventListener("click", resetProgress);
   pronounceBtn.addEventListener("click", speakCurrentTagalog);
   startNewSessionBtn.addEventListener("click", startNewSession);
+  customWordForm.addEventListener("submit", handleCustomSubmit);
+  cancelCustomEditBtn.addEventListener("click", cancelCustomEdit);
+  customItemsList.addEventListener("click", handleCustomListClick);
+  exportCustomBtn.addEventListener("click", exportCustomItems);
+  importCustomBtn.addEventListener("click", () => importCustomInput.click());
+  importCustomInput.addEventListener("change", handleImportCustomFile);
 
   typingForm.addEventListener("submit", (event) => {
     event.preventDefault();
@@ -336,9 +369,10 @@ function renderModeLayout() {
 function renderQuizOptions(answerField) {
   const answer = state.currentItem[answerField];
   const decoyField = answerField === "tagalog" ? "tagalog" : "english";
+  const studyItems = getStudyItems();
   const uniquePool = Array.from(
     new Set(
-      LESSON_ITEMS.filter((item) => item[decoyField] !== answer).map((item) => item[decoyField])
+      studyItems.filter((item) => item[decoyField] !== answer).map((item) => item[decoyField])
     )
   );
   const options = [answer, ...sample(uniquePool, 3)];
@@ -352,6 +386,45 @@ function renderQuizOptions(answerField) {
     btn.addEventListener("click", () => handleQuizAnswer(text, answer, btn));
     quizOptions.append(btn);
   });
+}
+
+function getStudyItems() {
+  return [...BASE_ITEMS, ...getCustomStudyItems()];
+}
+
+function getCustomStudyItems() {
+  if (!Array.isArray(progress.customItems)) {
+    return [];
+  }
+  return progress.customItems.map((item) => ({
+    id: item.id,
+    category: item.category || "Custom",
+    english: item.english,
+    tagalog: item.tagalog,
+    pronunciation: item.pronunciation || "N/A",
+    grammar:
+      item.grammar ||
+      CATEGORY_GRAMMAR[item.category] ||
+      "Study word order and markers in this phrase.",
+    unit: null,
+    source: "custom"
+  }));
+}
+
+function getPathFilteredItems() {
+  const items = getStudyItems();
+  if (state.path === "custom") {
+    return items.filter((item) => item.source === "custom");
+  }
+
+  if (state.path.startsWith("unit_")) {
+    const unitNum = Number(state.path.replace("unit_", ""));
+    if (unitNum > 0) {
+      return items.filter((item) => item.unit === unitNum);
+    }
+  }
+
+  return items;
 }
 
 function handlePrimaryAction() {
@@ -514,8 +587,8 @@ function clearTypingOutcome() {
 }
 
 function getFilteredItems() {
-  const byCategory =
-    state.category === "all" ? LESSON_ITEMS : LESSON_ITEMS.filter((item) => item.category === state.category);
+  const byPath = getPathFilteredItems();
+  const byCategory = state.category === "all" ? byPath : byPath.filter((item) => item.category === state.category);
 
   if (state.focus === "due") {
     return byCategory.filter(isDueItem);
@@ -824,6 +897,315 @@ function scheduleCurrentItem(rating) {
   renderStats();
 }
 
+function createCustomItemId() {
+  return `custom_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`;
+}
+
+function getCustomSignature(english, tagalog) {
+  return `${normalize(english)}|||${normalize(tagalog)}`;
+}
+
+function normalizeCustomCategory(value) {
+  const trimmed = String(value || "").trim();
+  return trimmed || "Custom";
+}
+
+function setCustomStatus(message, type = "info") {
+  if (!customStatusLine) {
+    return;
+  }
+  customStatusLine.textContent = message || "";
+  customStatusLine.className = "custom-status-line";
+  if (type === "success") {
+    customStatusLine.classList.add("custom-status-success");
+  } else if (type === "error") {
+    customStatusLine.classList.add("custom-status-error");
+  }
+}
+
+function findDuplicateStudyItem({ english, tagalog, ignoreCustomId = null }) {
+  const signature = getCustomSignature(english, tagalog);
+  return (
+    getStudyItems().find((item) => {
+      if (item.source === "custom" && item.id === ignoreCustomId) {
+        return false;
+      }
+      return getCustomSignature(item.english, item.tagalog) === signature;
+    }) || null
+  );
+}
+
+function setCustomFormMode(editing) {
+  const isEditing = Boolean(editing);
+  state.editingCustomId = editing ? editing.id : null;
+  customSubmitBtn.textContent = isEditing ? "Save Changes" : "Add To Pack";
+  cancelCustomEditBtn.classList.toggle("hidden", !isEditing);
+}
+
+function cancelCustomEdit(input = false) {
+  const silent = typeof input === "boolean" ? input : false;
+  setCustomFormMode(null);
+  customWordForm.reset();
+  if (!silent) {
+    setCustomStatus("Edit canceled.");
+  }
+}
+
+function migrateProgressKey(oldKey, newKey) {
+  if (!oldKey || !newKey || oldKey === newKey) {
+    return;
+  }
+
+  if (progress.itemStats[oldKey] && !progress.itemStats[newKey]) {
+    progress.itemStats[newKey] = progress.itemStats[oldKey];
+  }
+  delete progress.itemStats[oldKey];
+
+  if (progress.reviewSchedule[oldKey] && !progress.reviewSchedule[newKey]) {
+    progress.reviewSchedule[newKey] = progress.reviewSchedule[oldKey];
+  }
+  delete progress.reviewSchedule[oldKey];
+
+  if (Array.isArray(progress.reviewQueue) && progress.reviewQueue.length) {
+    progress.reviewQueue = normalizeReviewQueue(progress.reviewQueue.map((entry) => (entry === oldKey ? newKey : entry)));
+  }
+}
+
+function removeCustomItemProgressData(item) {
+  const key = itemKey(item);
+  delete progress.itemStats[key];
+  delete progress.reviewSchedule[key];
+  if (Array.isArray(progress.reviewQueue) && progress.reviewQueue.length) {
+    progress.reviewQueue = progress.reviewQueue.filter((entry) => entry !== key);
+  }
+}
+
+function renderCustomItems() {
+  customItemsList.innerHTML = "";
+  const items = Array.isArray(progress.customItems) ? progress.customItems : [];
+  if (!items.length) {
+    const empty = document.createElement("li");
+    empty.className = "custom-item-empty";
+    empty.textContent = "No custom entries yet.";
+    customItemsList.append(empty);
+    return;
+  }
+
+  items.forEach((item) => {
+    const li = document.createElement("li");
+    li.className = "custom-item";
+
+    const textWrap = document.createElement("div");
+    textWrap.className = "custom-item-text";
+
+    const title = document.createElement("p");
+    title.className = "custom-item-title";
+    title.textContent = `${item.english} -> ${item.tagalog}`;
+
+    const meta = document.createElement("p");
+    meta.className = "custom-item-meta";
+    const pronunciation = item.pronunciation ? ` | Pronunciation: ${item.pronunciation}` : "";
+    meta.textContent = `Category: ${item.category}${pronunciation}`;
+
+    textWrap.append(title, meta);
+
+    const actions = document.createElement("div");
+    actions.className = "custom-item-actions";
+
+    const editBtn = document.createElement("button");
+    editBtn.type = "button";
+    editBtn.className = "edit-custom-btn";
+    editBtn.dataset.action = "edit";
+    editBtn.dataset.id = item.id;
+    editBtn.textContent = "Edit";
+
+    const deleteBtn = document.createElement("button");
+    deleteBtn.type = "button";
+    deleteBtn.className = "remove-custom-btn";
+    deleteBtn.dataset.action = "delete";
+    deleteBtn.dataset.id = item.id;
+    deleteBtn.textContent = "Delete";
+
+    actions.append(editBtn, deleteBtn);
+    li.append(textWrap, actions);
+    customItemsList.append(li);
+  });
+}
+
+function handleCustomSubmit(event) {
+  event.preventDefault();
+
+  const draft = {
+    english: customEnglish.value.trim(),
+    tagalog: customTagalog.value.trim(),
+    category: normalizeCustomCategory(customCategory.value),
+    pronunciation: customPronunciation.value.trim(),
+    grammar: customGrammar.value.trim()
+  };
+
+  if (!draft.english || !draft.tagalog) {
+    setCustomStatus("English and Tagalog are required.", "error");
+    return;
+  }
+
+  const duplicate = findDuplicateStudyItem({
+    english: draft.english,
+    tagalog: draft.tagalog,
+    ignoreCustomId: state.editingCustomId
+  });
+
+  if (duplicate) {
+    const sourceLabel = duplicate.source === "custom" ? "custom pack" : "built-in lessons";
+    setCustomStatus(`Duplicate phrase found in ${sourceLabel}.`, "error");
+    return;
+  }
+
+  if (!Array.isArray(progress.customItems)) {
+    progress.customItems = [];
+  }
+
+  let statusMessage = "Custom phrase added.";
+  if (state.editingCustomId) {
+    const editIndex = progress.customItems.findIndex((item) => item.id === state.editingCustomId);
+    if (editIndex >= 0) {
+      const previous = progress.customItems[editIndex];
+      const updated = {
+        ...previous,
+        ...draft,
+        updatedAt: new Date().toISOString()
+      };
+      progress.customItems[editIndex] = updated;
+      migrateProgressKey(itemKey(previous), itemKey(updated));
+      statusMessage = "Custom phrase updated.";
+    }
+  } else {
+    progress.customItems.unshift({
+      id: createCustomItemId(),
+      ...draft,
+      createdAt: new Date().toISOString()
+    });
+  }
+
+  cancelCustomEdit(true);
+  persistProgress();
+  populateCategories();
+  renderCustomItems();
+  renderStats();
+  setNextQuestion();
+  setCustomStatus(statusMessage, "success");
+}
+
+function handleCustomListClick(event) {
+  const button = event.target.closest("button[data-action]");
+  if (!button) {
+    return;
+  }
+
+  const itemId = button.dataset.id;
+  const items = Array.isArray(progress.customItems) ? progress.customItems : [];
+  const item = items.find((entry) => entry.id === itemId);
+  if (!item) {
+    return;
+  }
+
+  if (button.dataset.action === "edit") {
+    setCustomFormMode(item);
+    customEnglish.value = item.english || "";
+    customTagalog.value = item.tagalog || "";
+    customCategory.value = item.category || "";
+    customPronunciation.value = item.pronunciation || "";
+    customGrammar.value = item.grammar || "";
+    setCustomStatus("Editing custom phrase.");
+    customEnglish.focus();
+    return;
+  }
+
+  if (button.dataset.action === "delete") {
+    const confirmed = window.confirm(`Delete "${item.english} -> ${item.tagalog}" from your custom pack?`);
+    if (!confirmed) {
+      return;
+    }
+    progress.customItems = items.filter((entry) => entry.id !== itemId);
+    removeCustomItemProgressData(item);
+    if (state.editingCustomId === itemId) {
+      cancelCustomEdit(true);
+    }
+    persistProgress();
+    populateCategories();
+    renderCustomItems();
+    renderStats();
+    setNextQuestion();
+    setCustomStatus("Custom phrase deleted.", "success");
+  }
+}
+
+function exportCustomItems() {
+  const items = Array.isArray(progress.customItems) ? progress.customItems : [];
+  const payload = {
+    version: CUSTOM_PACK_VERSION,
+    exportedAt: new Date().toISOString(),
+    items
+  };
+  const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = `johns_tagalog_custom_pack_${getISODate(new Date())}.json`;
+  document.body.append(link);
+  link.click();
+  link.remove();
+  URL.revokeObjectURL(url);
+  setCustomStatus(`Exported ${items.length} custom phrase${items.length === 1 ? "" : "s"}.`, "success");
+}
+
+async function handleImportCustomFile(event) {
+  const file = event.target.files?.[0];
+  if (!file) {
+    return;
+  }
+
+  try {
+    const raw = await file.text();
+    const parsed = JSON.parse(raw);
+    const incomingItems = Array.isArray(parsed) ? parsed : parsed?.items;
+    const normalizedItems = normalizeCustomItems(incomingItems);
+    if (!normalizedItems.length) {
+      setCustomStatus("No valid custom phrases found in that file.", "error");
+      return;
+    }
+
+    if (!Array.isArray(progress.customItems)) {
+      progress.customItems = [];
+    }
+
+    let added = 0;
+    let skipped = 0;
+    normalizedItems.forEach((item) => {
+      const duplicate = findDuplicateStudyItem({ english: item.english, tagalog: item.tagalog });
+      if (duplicate) {
+        skipped += 1;
+        return;
+      }
+      progress.customItems.push(item);
+      added += 1;
+    });
+
+    if (added) {
+      persistProgress();
+      populateCategories();
+      renderCustomItems();
+      renderStats();
+      setNextQuestion();
+    }
+
+    setCustomStatus(`Import complete: ${added} added, ${skipped} skipped.`, added ? "success" : "error");
+  } catch {
+    setCustomStatus("Import failed. Please use a valid JSON custom-pack file.", "error");
+  } finally {
+    importCustomInput.value = "";
+  }
+}
+
 function ensureSeenTracked() {
   if (!state.currentItem || state.seenTracked) {
     return;
@@ -922,7 +1304,7 @@ function addXp(amount) {
 function renderStats() {
   const attempts = progress.correct + progress.incorrect;
   const accuracy = attempts ? Math.round((progress.correct / attempts) * 100) : 0;
-  const masteredCount = LESSON_ITEMS.filter(isMasteredItem).length;
+  const masteredCount = getStudyItems().filter(isMasteredItem).length;
   const level = getLevelFromXp(progress.xp);
   xpValue.textContent = progress.xp;
   streakValue.textContent = `${progress.streak} day${progress.streak === 1 ? "" : "s"}`;
@@ -990,7 +1372,7 @@ function getSessionWeakAreas(limit = 3) {
 }
 
 function getSessionRecommendation(attempts, accuracy, weakAreas) {
-  const dueCount = LESSON_ITEMS.filter(isDueItem).length;
+  const dueCount = getStudyItems().filter(isDueItem).length;
   if (dueCount >= 3) {
     return "Due Only - clear your scheduled review cards.";
   }
@@ -1105,6 +1487,58 @@ function normalizeReviewSchedule(rawSchedule) {
   return normalized;
 }
 
+function normalizeCustomItem(rawItem) {
+  if (!rawItem || typeof rawItem !== "object") {
+    return null;
+  }
+
+  const english = String(rawItem.english || "").trim();
+  const tagalog = String(rawItem.tagalog || "").trim();
+  if (!english || !tagalog) {
+    return null;
+  }
+
+  return {
+    id: typeof rawItem.id === "string" && rawItem.id ? rawItem.id : createCustomItemId(),
+    english,
+    tagalog,
+    category: normalizeCustomCategory(rawItem.category),
+    pronunciation: String(rawItem.pronunciation || "").trim(),
+    grammar: String(rawItem.grammar || "").trim(),
+    createdAt: rawItem.createdAt || new Date().toISOString()
+  };
+}
+
+function normalizeCustomItems(rawItems) {
+  if (!Array.isArray(rawItems)) {
+    return [];
+  }
+
+  const seenSignatures = new Set();
+  const seenIds = new Set();
+  const normalized = [];
+  rawItems.forEach((rawItem) => {
+    const item = normalizeCustomItem(rawItem);
+    if (!item) {
+      return;
+    }
+
+    const signature = getCustomSignature(item.english, item.tagalog);
+    if (seenSignatures.has(signature)) {
+      return;
+    }
+    seenSignatures.add(signature);
+
+    while (seenIds.has(item.id)) {
+      item.id = createCustomItemId();
+    }
+    seenIds.add(item.id);
+    normalized.push(item);
+  });
+
+  return normalized;
+}
+
 function loadProgress() {
   try {
     let raw = localStorage.getItem(STORAGE_KEY);
@@ -1142,6 +1576,7 @@ function loadProgress() {
       goalTarget: Number(parsed.goalTarget) || DEFAULT_GOAL_TARGET,
       reviewQueue: normalizeReviewQueue(parsed.reviewQueue),
       reviewSchedule: normalizeReviewSchedule(parsed.reviewSchedule),
+      customItems: normalizeCustomItems(parsed.customItems),
       itemStats
     };
   } catch {
@@ -1159,6 +1594,7 @@ function defaultProgress() {
     goalTarget: DEFAULT_GOAL_TARGET,
     reviewQueue: [],
     reviewSchedule: {},
+    customItems: [],
     itemStats: {}
   };
 }

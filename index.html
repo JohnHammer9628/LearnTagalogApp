@@ -207,6 +207,12 @@
       <section class="custom-pack">
         <h3>Custom Word Pack</h3>
         <p class="custom-copy">Add your own words and phrases to practice alongside built-in lessons.</p>
+        <div class="custom-tools">
+          <button id="exportCustomBtn" class="ghost" type="button">Export JSON</button>
+          <button id="importCustomBtn" class="ghost" type="button">Import JSON</button>
+          <input id="importCustomInput" type="file" accept="application/json" class="hidden" />
+        </div>
+        <p id="customStatusLine" class="custom-status-line" aria-live="polite"></p>
         <form id="customWordForm" class="custom-form">
           <div class="custom-form-block">
             <p class="custom-form-title">Core Phrase</p>
@@ -239,7 +245,8 @@
             </div>
           </div>
           <div class="custom-form-actions">
-            <button type="submit">Add To Pack</button>
+            <button id="customSubmitBtn" type="submit">Add To Pack</button>
+            <button id="cancelCustomEditBtn" class="ghost hidden" type="button">Cancel Edit</button>
           </div>
         </form>
         <ul id="customItemsList" class="custom-list"></ul>

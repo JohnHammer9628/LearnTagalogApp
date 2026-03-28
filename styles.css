@@ -782,6 +782,29 @@ button:disabled {
   color: var(--ink-soft);
 }
 
+.custom-tools {
+  display: flex;
+  gap: 0.55rem;
+  flex-wrap: wrap;
+  margin-bottom: 0.65rem;
+}
+
+.custom-status-line {
+  margin: 0 0 0.7rem;
+  min-height: 1.3em;
+  color: #355a67;
+  font-size: 0.88rem;
+  font-weight: 600;
+}
+
+.custom-status-success {
+  color: #0f7c61;
+}
+
+.custom-status-error {
+  color: #ad2f22;
+}
+
 .custom-form {
   display: grid;
   gap: 0.85rem;
@@ -819,6 +842,8 @@ button:disabled {
 .custom-form-actions {
   display: flex;
   justify-content: flex-end;
+  gap: 0.55rem;
+  flex-wrap: wrap;
 }
 
 .custom-form-actions button {
@@ -844,6 +869,27 @@ button:disabled {
   background: #fff;
 }
 
+.custom-item-actions {
+  display: flex;
+  gap: 0.45rem;
+  flex-wrap: wrap;
+}
+
+.custom-item-text {
+  display: grid;
+  gap: 0.12rem;
+}
+
+.custom-item-title {
+  font-weight: 700;
+  color: var(--ink);
+}
+
+.custom-item-meta {
+  color: var(--ink-soft);
+  font-size: 0.84rem;
+}
+
 .custom-item-empty {
   color: var(--ink-soft);
   font-size: 0.9rem;
@@ -853,6 +899,14 @@ button:disabled {
   background: #fff;
   color: #ad2f22;
   border: 1px solid rgba(173, 47, 34, 0.35);
+  padding: 0.4rem 0.7rem;
+  border-radius: 8px;
+}
+
+.edit-custom-btn {
+  background: #fff;
+  color: #0b7f9e;
+  border: 1px solid rgba(11, 127, 158, 0.35);
   padding: 0.4rem 0.7rem;
   border-radius: 8px;
 }
