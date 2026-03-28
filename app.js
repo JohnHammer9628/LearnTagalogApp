@@ -42,6 +42,7 @@ const LEGACY_STORAGE_KEYS = [
 ];
 const XP_PER_LEVEL = 100;
 const DEFAULT_GOAL_TARGET = 10;
+const MAX_REVIEW_QUEUE = 25;
 
 const CATEGORY_UNITS = {
   Greetings: 1,
@@ -106,6 +107,7 @@ const masteredValue = document.getElementById("masteredValue");
 const goalRing = document.getElementById("goalRing");
 const goalProgressText = document.getElementById("goalProgressText");
 const goalStatusText = document.getElementById("goalStatusText");
+const reviewQueueCount = document.getElementById("reviewQueueCount");
 const customWordForm = document.getElementById("customWordForm");
 const customEnglish = document.getElementById("customEnglish");
 const customTagalog = document.getElementById("customTagalog");
@@ -368,11 +370,13 @@ function handleQuizAnswer(choice, answer, selectedButton) {
   disableQuizOptions();
 
   if (isCorrect) {
+    removeFromReviewQueue(state.currentItem);
     addScore({ correct: 1, xp: 9, item: state.currentItem, itemCorrect: 1 });
     feedbackLine.textContent = "";
     return;
   }
 
+  addToReviewQueue(state.currentItem);
   addScore({ incorrect: 1, xp: -4, item: state.currentItem, itemIncorrect: 1 });
   feedbackLine.textContent = "";
 }
@@ -394,12 +398,14 @@ function handleTypingAnswer() {
   const isCorrect = typed === answer;
 
   if (isCorrect) {
+    removeFromReviewQueue(state.currentItem);
     addScore({ correct: 1, xp: 12, item: state.currentItem, itemCorrect: 1 });
     setTypingOutcome(true);
     feedbackLine.textContent = "";
     return;
   }
 
+  addToReviewQueue(state.currentItem);
   addScore({ incorrect: 1, xp: -5, item: state.currentItem, itemIncorrect: 1 });
   setTypingOutcome(false);
   feedbackLine.textContent = "";
@@ -483,6 +489,12 @@ function isWeakItem(item) {
 function getNextItem(items, previous) {
   if (items.length <= 1) {
     return items[0];
+  }
+
+  const previousKey = previous ? itemKey(previous) : null;
+  const queuedPool = getQueuedItemsFromPool(items, previousKey);
+  if (queuedPool.length) {
+    return queuedPool[0];
   }
 
   const pool = previous
@@ -596,6 +608,48 @@ function itemKey(item) {
   return `${item.tagalog}|||${item.english}`;
 }
 
+function getQueuedItemsFromPool(items, previousKey) {
+  if (!Array.isArray(progress.reviewQueue) || !progress.reviewQueue.length) {
+    return [];
+  }
+
+  const itemByKey = new Map(items.map((item) => [itemKey(item), item]));
+  const queuedItems = progress.reviewQueue.map((key) => itemByKey.get(key)).filter(Boolean);
+  if (!queuedItems.length) {
+    return [];
+  }
+
+  if (previousKey) {
+    const alternate = queuedItems.find((item) => itemKey(item) !== previousKey);
+    if (alternate) {
+      return [alternate];
+    }
+  }
+
+  return [queuedItems[0]];
+}
+
+function addToReviewQueue(item) {
+  if (!item) {
+    return;
+  }
+
+  const key = itemKey(item);
+  const baseQueue = Array.isArray(progress.reviewQueue) ? progress.reviewQueue : [];
+  const deduped = baseQueue.filter((entry) => entry !== key);
+  deduped.unshift(key);
+  progress.reviewQueue = deduped.slice(0, MAX_REVIEW_QUEUE);
+}
+
+function removeFromReviewQueue(item) {
+  if (!item || !Array.isArray(progress.reviewQueue) || !progress.reviewQueue.length) {
+    return;
+  }
+
+  const key = itemKey(item);
+  progress.reviewQueue = progress.reviewQueue.filter((entry) => entry !== key);
+}
+
 function ensureSeenTracked() {
   if (!state.currentItem || state.seenTracked) {
     return;
@@ -670,6 +724,7 @@ function renderStats() {
   levelBadge.textContent = `Level ${level}`;
   renderGoalProgress();
   syncGoalButtons();
+  renderReviewQueueCount();
 }
 
 function getGoalTarget() {
@@ -702,6 +757,14 @@ function renderGoalProgress() {
   goalStatusText.textContent = remaining ? `${remaining} to go` : "Goal complete";
 }
 
+function renderReviewQueueCount() {
+  if (!reviewQueueCount) {
+    return;
+  }
+  const count = Array.isArray(progress.reviewQueue) ? progress.reviewQueue.length : 0;
+  reviewQueueCount.textContent = String(count);
+}
+
 function updateStreak() {
   const today = getISODate(new Date());
   if (progress.lastStudyDate === today) {
@@ -732,6 +795,23 @@ function getISODate(date) {
   const m = String(date.getMonth() + 1).padStart(2, "0");
   const d = String(date.getDate()).padStart(2, "0");
   return `${y}-${m}-${d}`;
+}
+
+function normalizeReviewQueue(rawQueue) {
+  if (!Array.isArray(rawQueue)) {
+    return [];
+  }
+
+  const seen = new Set();
+  const normalized = [];
+  rawQueue.forEach((entry) => {
+    if (typeof entry !== "string" || !entry || seen.has(entry)) {
+      return;
+    }
+    seen.add(entry);
+    normalized.push(entry);
+  });
+  return normalized.slice(0, MAX_REVIEW_QUEUE);
 }
 
 function loadProgress() {
@@ -769,6 +849,7 @@ function loadProgress() {
       streak: Number(parsed.streak) || 0,
       lastStudyDate: parsed.lastStudyDate || null,
       goalTarget: Number(parsed.goalTarget) || DEFAULT_GOAL_TARGET,
+      reviewQueue: normalizeReviewQueue(parsed.reviewQueue),
       itemStats
     };
   } catch {
@@ -784,6 +865,7 @@ function defaultProgress() {
     streak: 0,
     lastStudyDate: null,
     goalTarget: DEFAULT_GOAL_TARGET,
+    reviewQueue: [],
     itemStats: {}
   };
 }
@@ -802,6 +884,7 @@ function resetProgress() {
   progress.incorrect = 0;
   progress.streak = 0;
   progress.lastStudyDate = null;
+  progress.reviewQueue = [];
   progress.itemStats = {};
   persistProgress();
   renderStats();

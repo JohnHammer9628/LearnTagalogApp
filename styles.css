@@ -263,11 +263,34 @@ input {
   margin-bottom: 0.2rem;
 }
 
+.study-head-main {
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+  flex-wrap: wrap;
+}
+
 .mode-title {
   margin: 0;
   color: #3f4d65;
   font-weight: 800;
   font-size: 1.05rem;
+}
+
+.review-queue-badge {
+  margin: 0;
+  padding: 0.24rem 0.55rem;
+  border-radius: 999px;
+  border: 1px solid rgba(26, 167, 173, 0.25);
+  background: rgba(26, 167, 173, 0.09);
+  color: #2d6171;
+  font-size: 0.76rem;
+  font-weight: 700;
+}
+
+.review-queue-badge span {
+  font-weight: 800;
+  color: #0b7f9e;
 }
 
 .icon-btn {
@@ -755,6 +778,10 @@ kbd {
     flex-direction: column;
     align-items: stretch;
     gap: 0.65rem;
+  }
+
+  .study-head-main {
+    justify-content: space-between;
   }
 
   .icon-btn {
