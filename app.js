@@ -34,7 +34,8 @@ const LESSON_ITEMS = [
   { category: "Food", english: "I want to eat", tagalog: "Gusto kong kumain", pronunciation: "GOOS-toh kong koo-MAH-in" }
 ];
 
-const STORAGE_KEY = "tagalog_sprint_progress_v2";
+const STORAGE_KEY = "aral_tagalog_progress_v1";
+const LEGACY_STORAGE_KEYS = ["tagalog_sprint_progress_v2", "tagalog_sprint_progress_v1"];
 
 const categorySelect = document.getElementById("categorySelect");
 const focusSelect = document.getElementById("focusSelect");
@@ -574,7 +575,16 @@ function getISODate(date) {
 
 function loadProgress() {
   try {
-    const raw = localStorage.getItem(STORAGE_KEY);
+    let raw = localStorage.getItem(STORAGE_KEY);
+    if (!raw) {
+      for (const legacyKey of LEGACY_STORAGE_KEYS) {
+        const legacyRaw = localStorage.getItem(legacyKey);
+        if (legacyRaw) {
+          raw = legacyRaw;
+          break;
+        }
+      }
+    }
     if (!raw) {
       return defaultProgress();
     }

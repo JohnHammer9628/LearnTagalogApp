@@ -1,6 +1,6 @@
-# LearnTagalogApp
+# AralTagalog
 
-LearnTagalogApp is a lightweight web app for English speakers learning Tagalog through active recall.
+AralTagalog is a lightweight web app for English speakers learning Tagalog through active recall.
 
 ## Features
 
