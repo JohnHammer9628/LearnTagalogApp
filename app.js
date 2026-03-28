@@ -40,11 +40,52 @@ const LEGACY_STORAGE_KEYS = [
   "tagalog_sprint_progress_v2",
   "tagalog_sprint_progress_v1"
 ];
+const XP_PER_LEVEL = 100;
+const DEFAULT_GOAL_TARGET = 10;
+
+const CATEGORY_UNITS = {
+  Greetings: 1,
+  Basics: 1,
+  Numbers: 1,
+  Questions: 2,
+  Everyday: 3,
+  Food: 3
+};
+
+const CATEGORY_GRAMMAR = {
+  Greetings: "Use polite particles like 'po' to sound respectful.",
+  Basics: "Tagalog order can be flexible, but markers carry meaning.",
+  Questions: "Question words like 'ano' and 'saan' often come early.",
+  Everyday: "Notice markers like 'ang', 'ng', and 'sa' in common phrases.",
+  Numbers: "Numbers are often paired with context words when counting things.",
+  Food: "'Gusto ko' means 'I want' and is very common in food phrases."
+};
+
+const PHRASE_GRAMMAR = {
+  "Kumusta ka?": "'ka' is informal 'you'. Add 'po' to be polite.",
+  Salamat: "Add 'po' for respect: 'Salamat po.'",
+  "Ano ang pangalan mo?": "'ang' marks the focused noun phrase.",
+  "Magkano ito?": "'ito' means 'this' near the speaker.",
+  "Nasaan ang banyo?": "'Nasaan' asks location.",
+  "Pwede mo ba akong tulungan?": "'ba' marks yes/no question tone.",
+  "Gusto ko ito": "'Gusto ko' is a common pattern for likes/wants.",
+  "Nag-aaral ako ng Tagalog": "'Nag-' often marks ongoing action."
+};
+
+const BASE_ITEMS = LESSON_ITEMS.map((item) => ({
+  ...item,
+  unit: CATEGORY_UNITS[item.category] || 1,
+  source: "base",
+  grammar: PHRASE_GRAMMAR[item.tagalog] || CATEGORY_GRAMMAR[item.category] || "Study word order and markers in this phrase."
+}));
 
 const categorySelect = document.getElementById("categorySelect");
 const focusSelect = document.getElementById("focusSelect");
 const directionSelect = document.getElementById("directionSelect");
+const pathSelect = document.getElementById("pathSelect");
+const goalButtons = Array.from(document.querySelectorAll(".goal-pill"));
 const resetProgressBtn = document.getElementById("resetProgressBtn");
+const pronounceBtn = document.getElementById("pronounceBtn");
 const levelBadge = document.getElementById("levelBadge");
 const modeTitle = document.getElementById("modeTitle");
 const promptLine = document.getElementById("promptLine");
@@ -62,8 +103,17 @@ const xpValue = document.getElementById("xpValue");
 const streakValue = document.getElementById("streakValue");
 const accuracyValue = document.getElementById("accuracyValue");
 const masteredValue = document.getElementById("masteredValue");
+const goalRing = document.getElementById("goalRing");
+const goalProgressText = document.getElementById("goalProgressText");
+const goalStatusText = document.getElementById("goalStatusText");
+const customWordForm = document.getElementById("customWordForm");
+const customEnglish = document.getElementById("customEnglish");
+const customTagalog = document.getElementById("customTagalog");
+const customCategory = document.getElementById("customCategory");
+const customPronunciation = document.getElementById("customPronunciation");
+const customGrammar = document.getElementById("customGrammar");
+const customItemsList = document.getElementById("customItemsList");
 const modeButtons = Array.from(document.querySelectorAll(".mode-btn"));
-const XP_PER_LEVEL = 100;
 
 const progress = loadProgress();
 
@@ -72,6 +122,7 @@ const state = {
   category: "all",
   focus: "smart",
   direction: "tl_to_en",
+  path: "all",
   currentItem: null,
   answerRevealed: false,
   quizAnswered: false,
@@ -85,6 +136,7 @@ function init() {
   bindEvents();
   focusSelect.value = state.focus;
   directionSelect.value = state.direction;
+  syncGoalButtons();
   setNextQuestion();
   renderStats();
 }
@@ -115,6 +167,19 @@ function bindEvents() {
     setNextQuestion();
   });
 
+  goalButtons.forEach((button) => {
+    button.addEventListener("click", () => {
+      const nextGoal = Number(button.dataset.goal) || DEFAULT_GOAL_TARGET;
+      if (nextGoal === getGoalTarget()) {
+        return;
+      }
+      progress.goalTarget = nextGoal;
+      persistProgress();
+      syncGoalButtons();
+      renderGoalProgress();
+    });
+  });
+
   modeButtons.forEach((button) => {
     button.addEventListener("click", () => {
       if (state.mode === button.dataset.mode) {
@@ -133,6 +198,7 @@ function bindEvents() {
   primaryActionBtn.addEventListener("click", handlePrimaryAction);
   nextBtn.addEventListener("click", setNextQuestion);
   resetProgressBtn.addEventListener("click", resetProgress);
+  pronounceBtn.addEventListener("click", speakCurrentTagalog);
 
   typingForm.addEventListener("submit", (event) => {
     event.preventDefault();
@@ -171,6 +237,7 @@ function setNextQuestion() {
     feedbackLine.textContent = "";
     quizOptions.innerHTML = "";
     clearTypingOutcome();
+    pronounceBtn.disabled = true;
     return;
   }
 
@@ -181,6 +248,7 @@ function setNextQuestion() {
   feedbackLine.textContent = "";
   feedbackLine.className = "feedback-line";
   clearTypingOutcome();
+  pronounceBtn.disabled = false;
 
   renderModeLayout();
 }
@@ -360,13 +428,13 @@ function setTypingOutcome(isCorrect) {
 
   if (isCorrect) {
     typingInput.classList.add("typing-input-correct");
-    typingResultIcon.textContent = "✓";
+    typingResultIcon.textContent = "\u2713";
     typingResultIcon.classList.add("show", "typing-result-correct");
     return;
   }
 
   typingInput.classList.add("typing-input-incorrect");
-  typingResultIcon.textContent = "✕";
+  typingResultIcon.textContent = "\u2715";
   typingResultIcon.classList.add("show", "typing-result-incorrect");
 }
 
@@ -601,6 +669,38 @@ function renderStats() {
   accuracyValue.textContent = `${accuracy}%`;
   masteredValue.textContent = String(masteredCount);
   levelBadge.textContent = `Level ${level}`;
+  renderGoalProgress();
+  syncGoalButtons();
+}
+
+function getGoalTarget() {
+  const target = Number(progress.goalTarget);
+  if (target === 10 || target === 20 || target === 30) {
+    return target;
+  }
+  return DEFAULT_GOAL_TARGET;
+}
+
+function syncGoalButtons() {
+  const target = getGoalTarget();
+  goalButtons.forEach((button) => {
+    const buttonGoal = Number(button.dataset.goal) || DEFAULT_GOAL_TARGET;
+    const active = buttonGoal === target;
+    button.classList.toggle("active", active);
+    button.setAttribute("aria-pressed", String(active));
+  });
+}
+
+function renderGoalProgress() {
+  const target = getGoalTarget();
+  const correct = Math.max(0, Number(progress.correct) || 0);
+  const completed = Math.min(correct, target);
+  const remaining = Math.max(0, target - correct);
+  const percent = Math.min(100, Math.round((completed / target) * 100));
+
+  goalRing.style.setProperty("--goal-pct", `${percent}%`);
+  goalProgressText.textContent = `${completed}/${target}`;
+  goalStatusText.textContent = remaining ? `${remaining} to go` : "Goal complete";
 }
 
 function updateStreak() {
@@ -669,6 +769,7 @@ function loadProgress() {
       incorrect: Number(parsed.incorrect) || 0,
       streak: Number(parsed.streak) || 0,
       lastStudyDate: parsed.lastStudyDate || null,
+      goalTarget: Number(parsed.goalTarget) || DEFAULT_GOAL_TARGET,
       itemStats
     };
   } catch {
@@ -683,6 +784,7 @@ function defaultProgress() {
     incorrect: 0,
     streak: 0,
     lastStudyDate: null,
+    goalTarget: DEFAULT_GOAL_TARGET,
     itemStats: {}
   };
 }
@@ -692,12 +794,11 @@ function persistProgress() {
 }
 
 function resetProgress() {
-  const confirmed = window.confirm("Reset all XP, accuracy, streak, and item mastery?");
+  const confirmed = window.confirm("Reset accuracy, streak, and item mastery? (XP will stay the same)");
   if (!confirmed) {
     return;
   }
 
-  progress.xp = 0;
   progress.correct = 0;
   progress.incorrect = 0;
   progress.streak = 0;
@@ -706,8 +807,26 @@ function resetProgress() {
   persistProgress();
   renderStats();
   setNextQuestion();
-  feedbackLine.textContent = "Progress reset complete.";
+  feedbackLine.textContent = "Practice stats reset. XP kept.";
   feedbackLine.className = "feedback-line";
+}
+
+function speakCurrentTagalog() {
+  if (!state.currentItem) {
+    return;
+  }
+
+  if (!("speechSynthesis" in window)) {
+    feedbackLine.textContent = "Speech is not supported in this browser.";
+    feedbackLine.className = "feedback-line feedback-bad";
+    return;
+  }
+
+  const utterance = new SpeechSynthesisUtterance(state.currentItem.tagalog);
+  utterance.lang = "tl-PH";
+  utterance.rate = 0.95;
+  window.speechSynthesis.cancel();
+  window.speechSynthesis.speak(utterance);
 }
 
 function adjustXp(delta) {

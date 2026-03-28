@@ -22,6 +22,22 @@
         <div class="hero-title-row">
           <h1>Johns Tagalog Coach</h1>
           <span id="levelBadge" class="level-badge">Level 1</span>
+          <article class="hero-goal-card">
+            <div class="goal-head">
+              <p class="label">Daily Goal</p>
+              <div class="goal-pills" role="group" aria-label="Choose daily goal">
+                <button class="goal-pill active" type="button" data-goal="10" aria-pressed="true">10</button>
+                <button class="goal-pill" type="button" data-goal="20" aria-pressed="false">20</button>
+                <button class="goal-pill" type="button" data-goal="30" aria-pressed="false">30</button>
+              </div>
+            </div>
+            <div class="goal-row">
+              <div id="goalRing" class="goal-ring" style="--goal-pct: 0%">
+                <span id="goalProgressText">0/10</span>
+              </div>
+              <p id="goalStatusText" class="goal-status">10 to go</p>
+            </div>
+          </article>
         </div>
         <p class="hero-copy">
           Build practical Tagalog fast with flashcards, quizzes, and typing drills.
@@ -72,17 +88,28 @@
               <option value="en_to_tl">English -> Tagalog</option>
             </select>
           </div>
+
+          <div class="field">
+            <label for="pathSelect">Lesson Path</label>
+            <select id="pathSelect" aria-label="Choose lesson path">
+              <option value="all">All Paths</option>
+              <option value="unit_1">Unit 1: Foundations</option>
+              <option value="unit_2">Unit 2: Conversation</option>
+              <option value="unit_3">Unit 3: Everyday Life</option>
+              <option value="custom">Custom Pack</option>
+            </select>
+          </div>
+
         </div>
 
         <div class="control-footer">
-          <button id="resetProgressBtn" class="danger" type="button">Reset Progress</button>
+          <button id="resetProgressBtn" class="danger" type="button">Reset Practice Stats</button>
         </div>
       </section>
 
       <section class="study-card">
-        <div class="study-head">
-          <p id="modeTitle" class="mode-title">Flashcards</p>
-          <div class="mode-toggle study-mode-toggle" role="tablist" aria-label="Study mode">
+        <div class="study-tabs">
+          <div class="mode-toggle" role="tablist" aria-label="Study mode">
             <button class="mode-btn active" data-mode="flashcard" role="tab" aria-selected="true">
               Flashcards
             </button>
@@ -92,33 +119,83 @@
             </button>
           </div>
         </div>
-        <p id="promptLine" class="prompt-line"></p>
-        <h2 id="questionLine" class="question-line"></h2>
-        <p id="hintLine" class="hint-line"></p>
-        <p id="metaLine" class="meta-line"></p>
-
-        <div id="quizOptions" class="quiz-options hidden" aria-live="polite"></div>
-
-        <form id="typingForm" class="typing-form hidden">
-          <div class="typing-input-wrap">
-            <input
-              id="typingInput"
-              type="text"
-              placeholder="Type your Tagalog answer..."
-              autocomplete="off"
-            />
-            <span id="typingResultIcon" class="typing-result-icon" aria-hidden="true"></span>
+        <div class="study-body">
+          <div class="study-head">
+            <p id="modeTitle" class="mode-title">Flashcards</p>
+            <button id="pronounceBtn" class="ghost icon-btn" type="button" aria-label="Pronounce Tagalog">
+              <span class="btn-icon" aria-hidden="true">&#128266;</span>
+              <span>Speak</span>
+            </button>
           </div>
-          <button type="submit">Check</button>
-        </form>
+          <p id="promptLine" class="prompt-line"></p>
+          <h2 id="questionLine" class="question-line"></h2>
+          <p id="hintLine" class="hint-line"></p>
+          <p id="metaLine" class="meta-line"></p>
 
-        <p id="feedbackLine" class="feedback-line" aria-live="polite"></p>
+          <div id="quizOptions" class="quiz-options hidden" aria-live="polite"></div>
 
-        <div class="actions">
-          <button id="primaryActionBtn">Reveal Answer</button>
-          <button id="nextBtn" class="ghost">Next Card</button>
+          <form id="typingForm" class="typing-form hidden">
+            <div class="typing-input-wrap">
+              <input
+                id="typingInput"
+                type="text"
+                placeholder="Type your Tagalog answer..."
+                autocomplete="off"
+              />
+              <span id="typingResultIcon" class="typing-result-icon" aria-hidden="true"></span>
+            </div>
+            <button type="submit">Check</button>
+          </form>
+
+          <p id="feedbackLine" class="feedback-line" aria-live="polite"></p>
+
+          <div class="actions">
+            <button id="primaryActionBtn">Reveal Answer</button>
+            <button id="nextBtn" class="ghost">Next Card</button>
+          </div>
+          <p class="shortcuts-note">Shortcuts: <kbd>Enter</kbd> reveal/check, <kbd>N</kbd> next card</p>
         </div>
-        <p class="shortcuts-note">Shortcuts: <kbd>Enter</kbd> reveal/check, <kbd>N</kbd> next card</p>
+      </section>
+
+      <section class="custom-pack">
+        <h3>Custom Word Pack</h3>
+        <p class="custom-copy">Add your own words and phrases to practice alongside built-in lessons.</p>
+        <form id="customWordForm" class="custom-form">
+          <div class="custom-form-block">
+            <p class="custom-form-title">Core Phrase</p>
+            <div class="custom-form-grid custom-form-grid-core">
+              <div class="field">
+                <label for="customEnglish">English phrase</label>
+                <input id="customEnglish" type="text" placeholder="e.g., I am learning Tagalog" required />
+              </div>
+              <div class="field">
+                <label for="customTagalog">Tagalog phrase</label>
+                <input id="customTagalog" type="text" placeholder="e.g., Nag-aaral ako ng Tagalog" required />
+              </div>
+            </div>
+          </div>
+          <div class="custom-form-block">
+            <p class="custom-form-title">Optional Details</p>
+            <div class="custom-form-grid custom-form-grid-meta">
+              <div class="field">
+                <label for="customCategory">Category</label>
+                <input id="customCategory" type="text" placeholder="e.g., Everyday" />
+              </div>
+              <div class="field">
+                <label for="customPronunciation">Pronunciation</label>
+                <input id="customPronunciation" type="text" placeholder="Pronunciation guide" />
+              </div>
+              <div class="field">
+                <label for="customGrammar">Grammar note</label>
+                <input id="customGrammar" type="text" placeholder="Helpful grammar reminder" />
+              </div>
+            </div>
+          </div>
+          <div class="custom-form-actions">
+            <button type="submit">Add To Pack</button>
+          </div>
+        </form>
+        <ul id="customItemsList" class="custom-list"></ul>
       </section>
 
       <section class="tips">
