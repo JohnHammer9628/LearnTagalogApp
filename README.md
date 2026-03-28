@@ -39,7 +39,7 @@ npm install
 npm run dev
 ```
 
-3. Vite opens the app automatically. If needed, open `http://127.0.0.1:5173`.
+3. Vite opens the app automatically. If needed, open `http://127.0.0.1:5174`.
 
 Now when we edit files, the page refreshes automatically.
 
