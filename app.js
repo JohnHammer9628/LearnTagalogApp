@@ -263,6 +263,99 @@ const BASE_ITEMS = [...LESSON_ITEMS, ...CORE_PACK_V2_ITEMS].map((item) => ({
   grammar: PHRASE_GRAMMAR[item.tagalog] || CATEGORY_GRAMMAR[item.category] || "Study word order and markers in this phrase."
 }));
 
+const CURRICULUM_VERSION = 1;
+const LEARN_RETRY_GAP = 2;
+const LEARN_PATTERN_STREAK_TARGET = 2;
+const UNIT_CHECKPOINT_SIZE = 10;
+const UNIT_CHECKPOINT_PASS_PCT = 80;
+const LEARN_MODES = {
+  review: "review",
+  learn: "learn"
+};
+const LEARN_PATTERN_LABELS = {
+  ako_statement: "Ako Statement",
+  gusto_need: "Gusto / Need",
+  nasaan_question: "Nasaan Question",
+  pwede_request: "Pwede Request"
+};
+const TAGALOG_WORD_GLOSSARY = {
+  ako: "I / me",
+  ko: "my / I (genitive)",
+  kong: "my + linker",
+  ay: "topic linker",
+  si: "name marker",
+  gusto: "want / like",
+  kailangan: "need",
+  ng: "object marker",
+  ang: "topic marker",
+  sa: "in / at / to",
+  na: "already / now",
+  ba: "question particle",
+  nasaan: "where is",
+  pwede: "can / may",
+  mo: "you / your",
+  "ako'ng": "I + linker",
+  akoang: "I + topic",
+  ito: "this",
+  doon: "there",
+  dito: "here"
+};
+const LEARN_PATTERN_FALLBACKS = {
+  ako_statement: [
+    { english: "I am learning Tagalog", tagalog: "Nag-aaral ako ng Tagalog" },
+    { english: "I am tired", tagalog: "Pagod ako" },
+    { english: "I am on my way", tagalog: "Papunta na ako" }
+  ],
+  gusto_need: [
+    { english: "I like this", tagalog: "Gusto ko ito" },
+    { english: "I want to eat", tagalog: "Gusto kong kumain" },
+    { english: "I need help", tagalog: "Kailangan ko ng tulong" }
+  ],
+  nasaan_question: [
+    { english: "Where is the bathroom?", tagalog: "Nasaan ang banyo?" }
+  ],
+  pwede_request: [
+    { english: "Can you help me?", tagalog: "Pwede mo ba akong tulungan?" },
+    { english: "Can I ask something?", tagalog: "Pwede ba akong magtanong?" }
+  ]
+};
+const CURRICULUM_UNITS = [
+  {
+    unit: 1,
+    id: "unit_1",
+    title: "Unit 1: Foundations",
+    lessons: [
+      { id: "u1_greetings", title: "Greetings", categories: ["Greetings"] },
+      { id: "u1_basics", title: "Basics", categories: ["Basics"] },
+      { id: "u1_numbers", title: "Numbers", categories: ["Numbers"] }
+    ],
+    patterns: ["ako_statement", "gusto_need"]
+  },
+  {
+    unit: 2,
+    id: "unit_2",
+    title: "Unit 2: Conversation",
+    lessons: [
+      { id: "u2_questions", title: "Questions", categories: ["Questions"] },
+      { id: "u2_time", title: "Time", categories: ["Time"] },
+      { id: "u2_directions", title: "Directions", categories: ["Directions"] }
+    ],
+    patterns: ["nasaan_question", "pwede_request"]
+  },
+  {
+    unit: 3,
+    id: "unit_3",
+    title: "Unit 3: Everyday Use",
+    lessons: [
+      { id: "u3_everyday", title: "Everyday", categories: ["Everyday"] },
+      { id: "u3_food", title: "Food", categories: ["Food"] },
+      { id: "u3_travel", title: "Travel", categories: ["Travel"] },
+      { id: "u3_family", title: "Family", categories: ["Family"] }
+    ],
+    patterns: ["ako_statement", "gusto_need", "nasaan_question", "pwede_request"]
+  }
+];
+
 const categorySelect = document.getElementById("categorySelect");
 const focusSelect = document.getElementById("focusSelect");
 const directionSelect = document.getElementById("directionSelect");
@@ -283,10 +376,12 @@ const coachingPronunciation = document.getElementById("coachingPronunciation");
 const coachingHint = document.getElementById("coachingHint");
 const quizOptions = document.getElementById("quizOptions");
 const typingForm = document.getElementById("typingForm");
+const typingSubmitBtn = typingForm ? typingForm.querySelector("button[type='submit']") : null;
 const typingInput = document.getElementById("typingInput");
 const typingResultIcon = document.getElementById("typingResultIcon");
 const primaryActionBtn = document.getElementById("primaryActionBtn");
 const nextBtn = document.getElementById("nextBtn");
+const actionsBar = document.getElementById("actionsBar");
 const endSessionBtn = document.getElementById("endSessionBtn");
 const xpValue = document.getElementById("xpValue");
 const streakValue = document.getElementById("streakValue");
@@ -326,11 +421,31 @@ const importCustomBtn = document.getElementById("importCustomBtn");
 const importCustomInput = document.getElementById("importCustomInput");
 const customItemsList = document.getElementById("customItemsList");
 const modeButtons = Array.from(document.querySelectorAll(".mode-btn"));
+const journeyButtons = Array.from(document.querySelectorAll(".journey-btn"));
+const reviewControls = document.getElementById("reviewControls");
+const reviewModeToggle = document.getElementById("reviewModeToggle");
+const reviewQueueBadge = document.querySelector(".review-queue-badge");
+const learnHeader = document.getElementById("learnHeader");
+const learnUnitTitle = document.getElementById("learnUnitTitle");
+const learnProgressText = document.getElementById("learnProgressText");
+const learnRecommendationText = document.getElementById("learnRecommendationText");
+const learnUnitSelect = document.getElementById("learnUnitSelect");
+const sentenceBuilderCard = document.getElementById("sentenceBuilderCard");
+const sentenceBuilderLabel = document.getElementById("sentenceBuilderLabel");
+const sentenceBuilderType = document.getElementById("sentenceBuilderType");
+const sentenceBuilderInstruction = document.getElementById("sentenceBuilderInstruction");
+const sentencePatternGuide = document.getElementById("sentencePatternGuide");
+const sentenceWordMap = document.getElementById("sentenceWordMap");
+const checkpointCard = document.getElementById("checkpointCard");
+const checkpointResultLine = document.getElementById("checkpointResultLine");
+const checkpointSummaryLine = document.getElementById("checkpointSummaryLine");
 
 const progress = loadProgress();
+ensureCurriculumState(true);
 
 const state = {
   mode: "flashcard",
+  journeyMode: progress.curriculum.activeMode === LEARN_MODES.learn ? LEARN_MODES.learn : LEARN_MODES.review,
   category: "all",
   focus: "smart",
   direction: "tl_to_en",
@@ -339,7 +454,9 @@ const state = {
   answerRevealed: false,
   quizAnswered: false,
   seenTracked: false,
-  editingCustomId: null
+  editingCustomId: null,
+  learnPrompt: null,
+  learnAnswered: false
 };
 
 let session = createEmptySession();
@@ -348,11 +465,15 @@ init();
 
 function init() {
   ensureDailyChallenge();
+  ensureCurriculumState();
   populateCategories();
   bindEvents();
   focusSelect.value = state.focus;
   directionSelect.value = state.direction;
   pathSelect.value = state.path;
+  syncJourneyButtons();
+  syncLearnUnitSelect();
+  toggleJourneyLayout();
   syncGoalButtons();
   renderCustomItems();
   setNextQuestion();
@@ -436,6 +557,28 @@ function bindEvents() {
     });
   });
 
+  journeyButtons.forEach((button) => {
+    button.addEventListener("click", () => {
+      const requestedMode = button.dataset.journey === LEARN_MODES.learn ? LEARN_MODES.learn : LEARN_MODES.review;
+      if (state.journeyMode === requestedMode) {
+        return;
+      }
+      state.journeyMode = requestedMode;
+      progress.curriculum.activeMode = requestedMode;
+      syncJourneyButtons();
+      toggleJourneyLayout();
+      persistProgress();
+      setNextQuestion();
+    });
+  });
+
+  if (learnUnitSelect) {
+    learnUnitSelect.addEventListener("change", (event) => {
+      const nextUnit = Number(event.target.value) || 1;
+      setActiveLearnUnit(nextUnit);
+    });
+  }
+
   primaryActionBtn.addEventListener("click", handlePrimaryAction);
   nextBtn.addEventListener("click", setNextQuestion);
   endSessionBtn.addEventListener("click", endSession);
@@ -470,6 +613,9 @@ function bindEvents() {
     }
 
     if (event.key.toLowerCase() === "n") {
+      if (state.journeyMode === LEARN_MODES.learn) {
+        return;
+      }
       event.preventDefault();
       setNextQuestion();
     }
@@ -477,6 +623,13 @@ function bindEvents() {
 }
 
 function setNextQuestion() {
+  if (state.journeyMode === LEARN_MODES.learn) {
+    setNextLearnQuestion();
+    return;
+  }
+
+  state.learnPrompt = null;
+  state.learnAnswered = false;
   const pool = getFilteredItems();
   if (!pool.length) {
     questionLine.textContent = state.focus === "due" ? "No due cards right now." : "No items in this category yet.";
@@ -512,6 +665,8 @@ function renderModeLayout() {
     return;
   }
 
+  hideLearnCards();
+  nextBtn.textContent = "Next Card";
   setPrimaryActionVisible(true);
   const prompt = getPromptConfig(state.currentItem);
   clearTypingOutcome();
@@ -549,6 +704,9 @@ function renderModeLayout() {
   primaryActionBtn.textContent = "Show Answer";
   primaryActionBtn.disabled = false;
   pronounceBtn.disabled = true;
+  if (typingSubmitBtn) {
+    typingSubmitBtn.textContent = "Check";
+  }
   typingInput.placeholder =
     prompt.answerField === "tagalog" ? "Type your Tagalog answer..." : "Type your English answer...";
   quizOptions.classList.add("hidden");
@@ -770,6 +928,11 @@ function getPathFilteredItems() {
 }
 
 function handlePrimaryAction() {
+  if (state.journeyMode === LEARN_MODES.learn) {
+    handleLearnPrimaryAction();
+    return;
+  }
+
   if (!state.currentItem) {
     return;
   }
@@ -852,6 +1015,11 @@ function handleQuizAnswer(choice, answer, selectedButton) {
 }
 
 function handleTypingAnswer() {
+  if (state.journeyMode === LEARN_MODES.learn) {
+    handleLearnTypingAnswer();
+    return;
+  }
+
   if (!state.currentItem) {
     return;
   }
@@ -889,6 +1057,15 @@ function handleTypingAnswer() {
 
 function setPrimaryActionVisible(visible) {
   primaryActionBtn.hidden = !visible;
+  syncActionBarVisibility();
+}
+
+function syncActionBarVisibility() {
+  if (!actionsBar) {
+    return;
+  }
+  const hideActions = primaryActionBtn.hidden && nextBtn.hidden;
+  actionsBar.classList.toggle("hidden", hideActions);
 }
 
 function disableQuizOptions() {
@@ -1663,6 +1840,7 @@ function renderStats() {
   renderReviewQueueCount();
   renderSessionSummary();
   renderMotivation({ attempts, accuracy, masteredCount });
+  updateLearnHeader();
 }
 
 function renderMotivation({ attempts, accuracy, masteredCount }) {
@@ -2105,7 +2283,8 @@ function loadProgress() {
       dailyChallenge: normalizeDailyChallenge(parsed.dailyChallenge),
       choiceStats: normalizeChoiceStats(parsed.choiceStats),
       customItems: normalizeCustomItems(parsed.customItems),
-      itemStats
+      itemStats,
+      curriculum: normalizeCurriculumProgress(parsed.curriculum)
     };
   } catch {
     return defaultProgress();
@@ -2125,7 +2304,8 @@ function defaultProgress() {
     dailyChallenge: null,
     choiceStats: { correct: 0, incorrect: 0 },
     customItems: [],
-    itemStats: {}
+    itemStats: {},
+    curriculum: defaultCurriculumProgress()
   };
 }
 
@@ -2146,6 +2326,11 @@ function resetProgress() {
   progress.reviewQueue = [];
   progress.reviewSchedule = {};
   progress.itemStats = {};
+  progress.curriculum = defaultCurriculumProgress();
+  state.journeyMode = LEARN_MODES.review;
+  syncJourneyButtons();
+  syncLearnUnitSelect();
+  toggleJourneyLayout();
   session = createEmptySession();
   persistProgress();
   renderStats();
@@ -2155,6 +2340,16 @@ function resetProgress() {
 }
 
 function speakCurrentTagalog() {
+  if (state.journeyMode === LEARN_MODES.learn && state.learnPrompt) {
+    const speechText = state.learnPrompt.speechText || state.learnPrompt.answerText || state.learnPrompt.questionText || "";
+    const spoken = speakText(speechText, "tl-PH", { voiceType: "tagalog" });
+    if (spoken) {
+      feedbackLine.textContent = "Playing Learn Path pronunciation.";
+      feedbackLine.className = "feedback-line";
+    }
+    return;
+  }
+
   if (!state.currentItem) {
     return;
   }
@@ -2268,4 +2463,1070 @@ function isMasteredItem(item) {
     return false;
   }
   return stats.correct / attempts >= 0.85;
+}
+
+function defaultCurriculumProgress() {
+  return {
+    version: CURRICULUM_VERSION,
+    activeMode: LEARN_MODES.review,
+    activeUnit: 1,
+    recommendedUnit: 1,
+    lessonStatusById: {},
+    patternMasteryById: {},
+    checkpointByUnit: {},
+    learnQueueState: createDefaultLearnQueueState()
+  };
+}
+
+function createDefaultLearnQueueState() {
+  return {
+    lessonId: null,
+    phase: "introduce",
+    introOrder: [],
+    introCursor: 0,
+    retryBuffer: [],
+    builderDrills: [],
+    builderCursor: 0,
+    checkpointOrder: [],
+    checkpointCursor: 0,
+    checkpointCorrect: 0,
+    checkpointIncorrect: 0,
+    completed: false
+  };
+}
+
+function normalizeCurriculumProgress(rawCurriculum) {
+  const defaults = defaultCurriculumProgress();
+  if (!rawCurriculum || typeof rawCurriculum !== "object") {
+    return defaults;
+  }
+
+  const activeUnit = Number(rawCurriculum.activeUnit) || defaults.activeUnit;
+  const recommendedUnit = Number(rawCurriculum.recommendedUnit) || defaults.recommendedUnit;
+  const activeMode =
+    rawCurriculum.activeMode === LEARN_MODES.learn || rawCurriculum.activeMode === LEARN_MODES.review
+      ? rawCurriculum.activeMode
+      : defaults.activeMode;
+
+  const lessonStatusById = {};
+  if (rawCurriculum.lessonStatusById && typeof rawCurriculum.lessonStatusById === "object") {
+    Object.entries(rawCurriculum.lessonStatusById).forEach(([key, value]) => {
+      if (typeof key !== "string") {
+        return;
+      }
+      const normalizedStatus =
+        value === "completed" || value === "in_progress" || value === "not_started" ? value : "not_started";
+      lessonStatusById[key] = normalizedStatus;
+    });
+  }
+
+  const patternMasteryById = {};
+  if (rawCurriculum.patternMasteryById && typeof rawCurriculum.patternMasteryById === "object") {
+    Object.entries(rawCurriculum.patternMasteryById).forEach(([key, value]) => {
+      if (typeof key !== "string" || !value || typeof value !== "object") {
+        return;
+      }
+      patternMasteryById[key] = {
+        attempts: Math.max(0, Number(value.attempts) || 0),
+        correct: Math.max(0, Number(value.correct) || 0),
+        streak: Math.max(0, Number(value.streak) || 0),
+        mastered: Boolean(value.mastered)
+      };
+    });
+  }
+
+  const checkpointByUnit = {};
+  if (rawCurriculum.checkpointByUnit && typeof rawCurriculum.checkpointByUnit === "object") {
+    Object.entries(rawCurriculum.checkpointByUnit).forEach(([key, value]) => {
+      if (!value || typeof value !== "object") {
+        return;
+      }
+      checkpointByUnit[key] = {
+        attempts: Math.max(0, Number(value.attempts) || 0),
+        bestScore: Math.max(0, Number(value.bestScore) || 0),
+        lastScore: Math.max(0, Number(value.lastScore) || 0),
+        passed: Boolean(value.passed),
+        lastAttemptAt: value.lastAttemptAt || null
+      };
+    });
+  }
+
+  let learnQueueState = createDefaultLearnQueueState();
+  if (rawCurriculum.learnQueueState && typeof rawCurriculum.learnQueueState === "object") {
+    const rawQueue = rawCurriculum.learnQueueState;
+    learnQueueState = {
+      lessonId: typeof rawQueue.lessonId === "string" ? rawQueue.lessonId : null,
+      phase:
+        rawQueue.phase === "introduce" ||
+        rawQueue.phase === "builder" ||
+        rawQueue.phase === "checkpoint" ||
+        rawQueue.phase === "completed"
+          ? rawQueue.phase
+          : "introduce",
+      introOrder: Array.isArray(rawQueue.introOrder) ? rawQueue.introOrder.filter((entry) => typeof entry === "string") : [],
+      introCursor: Math.max(0, Number(rawQueue.introCursor) || 0),
+      retryBuffer: Array.isArray(rawQueue.retryBuffer) ? rawQueue.retryBuffer.filter(Boolean) : [],
+      builderDrills: Array.isArray(rawQueue.builderDrills) ? rawQueue.builderDrills.filter(Boolean) : [],
+      builderCursor: Math.max(0, Number(rawQueue.builderCursor) || 0),
+      checkpointOrder: Array.isArray(rawQueue.checkpointOrder)
+        ? rawQueue.checkpointOrder.filter(Boolean)
+        : [],
+      checkpointCursor: Math.max(0, Number(rawQueue.checkpointCursor) || 0),
+      checkpointCorrect: Math.max(0, Number(rawQueue.checkpointCorrect) || 0),
+      checkpointIncorrect: Math.max(0, Number(rawQueue.checkpointIncorrect) || 0),
+      completed: Boolean(rawQueue.completed)
+    };
+  }
+
+  return {
+    version: Number(rawCurriculum.version) || CURRICULUM_VERSION,
+    activeMode,
+    activeUnit,
+    recommendedUnit,
+    lessonStatusById,
+    patternMasteryById,
+    checkpointByUnit,
+    learnQueueState
+  };
+}
+
+function ensureCurriculumState(skipPersist = false) {
+  if (!progress.curriculum || typeof progress.curriculum !== "object") {
+    progress.curriculum = defaultCurriculumProgress();
+  }
+  progress.curriculum = normalizeCurriculumProgress(progress.curriculum);
+
+  let didChange = false;
+  const lessonStatus = progress.curriculum.lessonStatusById;
+  const allLessons = CURRICULUM_UNITS.flatMap((unit) => unit.lessons);
+  allLessons.forEach((lesson) => {
+    if (!lessonStatus[lesson.id]) {
+      lessonStatus[lesson.id] = "not_started";
+      didChange = true;
+    }
+  });
+
+  const patternStats = progress.curriculum.patternMasteryById;
+  const allPatterns = Array.from(new Set(CURRICULUM_UNITS.flatMap((unit) => unit.patterns)));
+  allPatterns.forEach((patternId) => {
+    if (!patternStats[patternId]) {
+      patternStats[patternId] = { attempts: 0, correct: 0, streak: 0, mastered: false };
+      didChange = true;
+    }
+  });
+
+  const checkpointByUnit = progress.curriculum.checkpointByUnit;
+  CURRICULUM_UNITS.forEach((unit) => {
+    const key = String(unit.unit);
+    if (!checkpointByUnit[key]) {
+      checkpointByUnit[key] = {
+        attempts: 0,
+        bestScore: 0,
+        lastScore: 0,
+        passed: false,
+        lastAttemptAt: null
+      };
+      didChange = true;
+    }
+  });
+
+  const validUnits = new Set(CURRICULUM_UNITS.map((unit) => unit.unit));
+  if (!validUnits.has(progress.curriculum.activeUnit)) {
+    progress.curriculum.activeUnit = 1;
+    didChange = true;
+  }
+
+  const recommendedUnit = getRecommendedUnit();
+  if (progress.curriculum.recommendedUnit !== recommendedUnit) {
+    progress.curriculum.recommendedUnit = recommendedUnit;
+    didChange = true;
+  }
+
+  if (!progress.curriculum.learnQueueState || typeof progress.curriculum.learnQueueState !== "object") {
+    progress.curriculum.learnQueueState = createDefaultLearnQueueState();
+    didChange = true;
+  }
+
+  if (didChange && !skipPersist) {
+    persistProgress();
+  }
+}
+
+function syncJourneyButtons() {
+  journeyButtons.forEach((button) => {
+    const active = button.dataset.journey === state.journeyMode;
+    button.classList.toggle("active", active);
+    button.setAttribute("aria-selected", String(active));
+  });
+}
+
+function toggleJourneyLayout() {
+  const isLearn = state.journeyMode === LEARN_MODES.learn;
+  if (reviewControls) {
+    reviewControls.classList.toggle("hidden", isLearn);
+  }
+  if (reviewModeToggle) {
+    reviewModeToggle.classList.toggle("hidden", isLearn);
+  }
+  if (reviewQueueBadge) {
+    reviewQueueBadge.classList.toggle("hidden", isLearn);
+  }
+  if (learnHeader) {
+    learnHeader.classList.toggle("hidden", !isLearn);
+  }
+  nextBtn.hidden = isLearn;
+  nextBtn.disabled = isLearn;
+  if (typingSubmitBtn) {
+    typingSubmitBtn.textContent = isLearn ? "Check Sentence" : "Check";
+  }
+  if (!isLearn) {
+    hideLearnCards();
+    state.learnPrompt = null;
+    state.learnAnswered = false;
+  }
+  syncActionBarVisibility();
+  updateLearnHeader();
+}
+
+function hideLearnCards() {
+  if (sentenceBuilderCard) {
+    sentenceBuilderCard.classList.add("hidden");
+  }
+  if (checkpointCard) {
+    checkpointCard.classList.add("hidden");
+  }
+}
+
+function syncLearnUnitSelect() {
+  if (!learnUnitSelect || !progress.curriculum) {
+    return;
+  }
+  learnUnitSelect.value = String(progress.curriculum.activeUnit || 1);
+}
+
+function getCurriculumUnit(unitNumber) {
+  return CURRICULUM_UNITS.find((unit) => unit.unit === unitNumber) || CURRICULUM_UNITS[0];
+}
+
+function getUnitLessons(unitNumber) {
+  const unit = getCurriculumUnit(unitNumber);
+  if (!unit) {
+    return [];
+  }
+  return unit.lessons.map((lesson) => ({
+    ...lesson,
+    unit: unit.unit,
+    unitTitle: unit.title,
+    patterns: [...unit.patterns]
+  }));
+}
+
+function getRecommendedUnit() {
+  for (const unit of CURRICULUM_UNITS) {
+    const unitLessons = getUnitLessons(unit.unit);
+    const hasPending = unitLessons.some((lesson) => getLessonStatus(lesson.id) !== "completed");
+    if (hasPending) {
+      return unit.unit;
+    }
+  }
+  return CURRICULUM_UNITS[CURRICULUM_UNITS.length - 1].unit;
+}
+
+function updateLearnHeader() {
+  if (!learnHeader || state.journeyMode !== LEARN_MODES.learn) {
+    return;
+  }
+
+  ensureCurriculumState();
+  const unit = getCurriculumUnit(progress.curriculum.activeUnit);
+  const unitLessons = getUnitLessons(unit.unit);
+  const completedLessons = unitLessons.filter((lesson) => getLessonStatus(lesson.id) === "completed").length;
+  const unitPct = unitLessons.length ? Math.round((completedLessons / unitLessons.length) * 100) : 0;
+  const activeLesson = getActiveLearnLesson(unit.unit);
+  const lessonIndex = activeLesson ? unitLessons.findIndex((lesson) => lesson.id === activeLesson.id) + 1 : unitLessons.length;
+
+  learnUnitTitle.textContent = unit.title;
+  learnProgressText.textContent = `Lesson ${Math.max(1, lessonIndex)} of ${unitLessons.length} • ${unitPct}%`;
+  learnRecommendationText.textContent = `Recommended next: Unit ${progress.curriculum.recommendedUnit}`;
+  syncLearnUnitSelect();
+}
+
+function setActiveLearnUnit(nextUnit) {
+  const unit = getCurriculumUnit(nextUnit);
+  progress.curriculum.activeUnit = unit.unit;
+  progress.curriculum.learnQueueState = createDefaultLearnQueueState();
+  progress.curriculum.learnQueueState.lessonId = null;
+  persistProgress();
+  syncLearnUnitSelect();
+  updateLearnHeader();
+  setNextQuestion();
+}
+
+function getLessonStatus(lessonId) {
+  return progress.curriculum.lessonStatusById[lessonId] || "not_started";
+}
+
+function setLessonStatus(lessonId, status) {
+  progress.curriculum.lessonStatusById[lessonId] = status;
+}
+
+function getLessonById(lessonId) {
+  return CURRICULUM_UNITS.flatMap((unit) => getUnitLessons(unit.unit)).find((lesson) => lesson.id === lessonId) || null;
+}
+
+function getLessonItems(lesson) {
+  if (!lesson) {
+    return [];
+  }
+  const categories = Array.isArray(lesson.categories) ? lesson.categories : [];
+  return BASE_ITEMS.filter((item) => categories.includes(item.category));
+}
+
+function getUnitItems(unitNumber) {
+  const lessons = getUnitLessons(unitNumber);
+  return lessons.flatMap((lesson) => getLessonItems(lesson));
+}
+
+function getActiveLearnLesson(unitNumber) {
+  const lessons = getUnitLessons(unitNumber);
+  return lessons.find((lesson) => getLessonStatus(lesson.id) !== "completed") || lessons[lessons.length - 1] || null;
+}
+
+function resetLearnQueueForLesson(lesson) {
+  const lessonItems = getLessonItems(lesson);
+  const queueState = createDefaultLearnQueueState();
+  queueState.lessonId = lesson.id;
+  queueState.phase = "introduce";
+  queueState.introOrder = lessonItems.map((item) => itemKey(item));
+  queueState.builderDrills = buildSentenceDrills(lesson, lessonItems);
+  queueState.checkpointOrder = buildCheckpointOrder(lesson.unit);
+  progress.curriculum.learnQueueState = queueState;
+}
+
+function tickRetryBufferAndShiftReady(queueState) {
+  if (!Array.isArray(queueState.retryBuffer) || !queueState.retryBuffer.length) {
+    return null;
+  }
+  queueState.retryBuffer.forEach((entry) => {
+    entry.remainingGap = Math.max(0, Number(entry.remainingGap) - 1);
+  });
+  const readyIndex = queueState.retryBuffer.findIndex((entry) => Number(entry.remainingGap) <= 0);
+  if (readyIndex === -1) {
+    return null;
+  }
+  const [ready] = queueState.retryBuffer.splice(readyIndex, 1);
+  return ready.prompt || null;
+}
+
+function buildSentenceDrills(lesson, lessonItems) {
+  const drills = [];
+  lesson.patterns.forEach((patternId, patternIdx) => {
+    const sentencePool = getPatternSentencePool(patternId, lessonItems, getUnitItems(lesson.unit));
+    if (!sentencePool.length) {
+      return;
+    }
+    const picked = sentencePool[patternIdx % sentencePool.length];
+    drills.push({ patternId, activity: "reorder", sentence: picked });
+    drills.push({ patternId, activity: "cloze", sentence: picked });
+    drills.push({ patternId, activity: "produce", sentence: picked });
+  });
+  return drills;
+}
+
+function getPatternSentencePool(patternId, lessonItems, unitItems) {
+  const matches = [];
+  const seen = new Set();
+  [...lessonItems, ...unitItems].forEach((item) => {
+    if (!doesItemMatchPattern(item, patternId)) {
+      return;
+    }
+    const signature = itemKey(item);
+    if (seen.has(signature)) {
+      return;
+    }
+    seen.add(signature);
+    matches.push({
+      english: item.english,
+      tagalog: item.tagalog,
+      itemKey: signature
+    });
+  });
+
+  const fallback = LEARN_PATTERN_FALLBACKS[patternId] || [];
+  fallback.forEach((entry) => {
+    const signature = `${entry.tagalog}|||${entry.english}`;
+    if (seen.has(signature)) {
+      return;
+    }
+    seen.add(signature);
+    matches.push({
+      english: entry.english,
+      tagalog: entry.tagalog,
+      itemKey: signature
+    });
+  });
+
+  return matches;
+}
+
+function doesItemMatchPattern(item, patternId) {
+  const english = String(item?.english || "");
+  const tagalog = String(item?.tagalog || "");
+  if (patternId === "ako_statement") {
+    return /^i am\b|^i'm\b/i.test(english) || /\bako\b/i.test(tagalog);
+  }
+  if (patternId === "gusto_need") {
+    return /^i want\b|^i need\b|^i like\b/i.test(english) || /^gusto\b|kailangan\b/i.test(tagalog);
+  }
+  if (patternId === "nasaan_question") {
+    return /^where is\b/i.test(english) || /^nasaan\b/i.test(tagalog);
+  }
+  if (patternId === "pwede_request") {
+    return /^can you\b|^can i\b/i.test(english) || /\bpwede\b/i.test(tagalog);
+  }
+  return false;
+}
+
+function buildCheckpointOrder(unitNumber) {
+  const unitItems = getUnitItems(unitNumber);
+  if (!unitItems.length) {
+    return [];
+  }
+  const checkpointOrder = [];
+  for (let i = 0; i < UNIT_CHECKPOINT_SIZE; i += 1) {
+    const item = unitItems[i % unitItems.length];
+    checkpointOrder.push({
+      itemKey: itemKey(item),
+      activity: i % 3 === 2 ? "produce" : "choice"
+    });
+  }
+  return checkpointOrder;
+}
+
+function getItemByKey(key) {
+  if (!key) {
+    return null;
+  }
+  return getStudyItems().find((item) => itemKey(item) === key) || null;
+}
+
+function isLessonItemsMastered(lesson) {
+  const lessonItems = getLessonItems(lesson);
+  if (!lessonItems.length) {
+    return true;
+  }
+  return lessonItems.every((item) => getItemStats(item).seen > 0);
+}
+
+function isLessonPatternsMastered(lesson) {
+  return lesson.patterns.every((patternId) => {
+    const stats = progress.curriculum.patternMasteryById[patternId];
+    return Boolean(stats?.mastered);
+  });
+}
+
+function recordPatternAttempt(patternId, isCorrect) {
+  const entry = progress.curriculum.patternMasteryById[patternId];
+  if (!entry) {
+    return;
+  }
+  entry.attempts += 1;
+  if (isCorrect) {
+    entry.correct += 1;
+    entry.streak += 1;
+  } else {
+    entry.streak = 0;
+  }
+  entry.mastered = entry.streak >= LEARN_PATTERN_STREAK_TARGET;
+}
+
+function setNextLearnQuestion() {
+  ensureCurriculumState();
+  hideCoachingCard();
+  hideRatingBar();
+  clearTypingOutcome();
+  hideLearnCards();
+  state.currentItem = null;
+  state.seenTracked = false;
+  state.quizAnswered = false;
+  state.answerRevealed = false;
+
+  const unit = getCurriculumUnit(progress.curriculum.activeUnit);
+  const lesson = getActiveLearnLesson(unit.unit);
+  if (!lesson) {
+    state.learnPrompt = {
+      kind: "complete",
+      title: "Learn Path Complete",
+      resultLine: "All guided units are complete.",
+      summaryLine: "Use Review Practice to reinforce what you learned."
+    };
+    renderLearnPrompt(state.learnPrompt, null, progress.curriculum.learnQueueState);
+    persistProgress();
+    return;
+  }
+
+  let queueState = progress.curriculum.learnQueueState;
+  if (!queueState.lessonId || queueState.lessonId !== lesson.id) {
+    resetLearnQueueForLesson(lesson);
+    queueState = progress.curriculum.learnQueueState;
+  }
+
+  if (getLessonStatus(lesson.id) === "not_started") {
+    setLessonStatus(lesson.id, "in_progress");
+  }
+
+  let prompt = tickRetryBufferAndShiftReady(queueState);
+
+  while (!prompt) {
+    if (queueState.phase === "introduce") {
+      if (queueState.introCursor < queueState.introOrder.length) {
+        const nextKey = queueState.introOrder[queueState.introCursor];
+        queueState.introCursor += 1;
+        const item = getItemByKey(nextKey);
+        if (item) {
+          prompt = {
+            kind: "intro",
+            activity: "intro",
+            lessonId: lesson.id,
+            itemKey: nextKey,
+            questionText: item.english,
+            answerText: item.tagalog,
+            hintText: "Try translating to Tagalog before revealing.",
+            pronunciation: item.pronunciation || "",
+            speechText: item.tagalog
+          };
+        }
+      } else {
+        queueState.phase = "builder";
+      }
+      continue;
+    }
+
+    if (queueState.phase === "builder") {
+      if (isLessonItemsMastered(lesson) && isLessonPatternsMastered(lesson)) {
+        queueState.phase = "checkpoint";
+        queueState.checkpointCursor = 0;
+        queueState.checkpointCorrect = 0;
+        queueState.checkpointIncorrect = 0;
+        continue;
+      }
+      if (!queueState.builderDrills.length) {
+        queueState.builderDrills = buildSentenceDrills(lesson, getLessonItems(lesson));
+      }
+      if (!queueState.builderDrills.length) {
+        queueState.phase = "checkpoint";
+        continue;
+      }
+
+      const drill = queueState.builderDrills[queueState.builderCursor % queueState.builderDrills.length];
+      queueState.builderCursor += 1;
+      prompt = buildSentenceDrillPrompt(drill);
+      continue;
+    }
+
+    if (queueState.phase === "checkpoint") {
+      if (queueState.checkpointCursor >= queueState.checkpointOrder.length) {
+        const result = finalizeLessonCheckpoint(lesson, queueState);
+        queueState.phase = "completed";
+        queueState.completed = true;
+        prompt = {
+          kind: "complete",
+          lessonId: lesson.id,
+          title: "Unit Checkpoint Complete",
+          resultLine: result.resultLine,
+          summaryLine: result.summaryLine
+        };
+        continue;
+      }
+
+      const entry = queueState.checkpointOrder[queueState.checkpointCursor];
+      queueState.checkpointCursor += 1;
+      prompt = buildCheckpointPrompt(entry, queueState.checkpointCursor, queueState.checkpointOrder.length);
+      continue;
+    }
+
+    if (queueState.phase === "completed") {
+      prompt = {
+        kind: "complete",
+        lessonId: lesson.id,
+        title: "Checkpoint Ready",
+        resultLine: "Continue to the next lesson when ready.",
+        summaryLine: "You can also jump to any unit using the picker above."
+      };
+      break;
+    }
+
+    prompt = null;
+    break;
+  }
+
+  state.learnPrompt = prompt;
+  state.learnAnswered = false;
+  feedbackLine.textContent = "";
+  feedbackLine.className = "feedback-line";
+  renderLearnPrompt(prompt, lesson, queueState);
+  persistProgress();
+}
+
+function buildSentenceDrillPrompt(drill) {
+  const sentence = drill.sentence;
+  const words = sentence.tagalog.split(" ").filter(Boolean);
+  if (drill.activity === "reorder") {
+    const wrongOne = words.length > 2 ? [words[1], words[0], ...words.slice(2)].join(" ") : [...words].reverse().join(" ");
+    const wrongTwo = [...words.slice(1), words[0]].join(" ");
+    return {
+      kind: "builder",
+      activity: "reorder",
+      patternId: drill.patternId,
+      itemKey: sentence.itemKey,
+      questionText: sentence.english,
+      hintText: "Choose the correctly ordered Tagalog sentence.",
+      answerText: sentence.tagalog,
+      options: [sentence.tagalog, wrongOne, wrongTwo],
+      speechText: sentence.tagalog
+    };
+  }
+
+  if (drill.activity === "cloze") {
+    const blankIndex = words.length > 2 ? 1 : 0;
+    const answerToken = words[blankIndex];
+    const questionTokens = [...words];
+    questionTokens[blankIndex] = "___";
+    const distractors = ["ako", "ang", "na", "ko", "ba", "ito"]
+      .filter((token) => normalize(token) !== normalize(answerToken))
+      .slice(0, 2);
+    return {
+      kind: "builder",
+      activity: "cloze",
+      patternId: drill.patternId,
+      itemKey: sentence.itemKey,
+      questionText: `${questionTokens.join(" ")} (${sentence.english})`,
+      hintText: "Pick the missing word.",
+      answerText: answerToken,
+      options: [answerToken, ...distractors],
+      speechText: sentence.tagalog
+    };
+  }
+
+  return {
+    kind: "builder",
+    activity: "produce",
+    patternId: drill.patternId,
+    itemKey: sentence.itemKey,
+    questionText: sentence.english,
+    hintText: "Type the full Tagalog sentence.",
+    answerText: sentence.tagalog,
+    speechText: sentence.tagalog
+  };
+}
+
+function buildCheckpointPrompt(entry, current, total) {
+  const item = getItemByKey(entry.itemKey);
+  if (!item) {
+    return {
+      kind: "checkpoint",
+      activity: "choice",
+      questionText: "Checkpoint item unavailable.",
+      hintText: "",
+      answerText: "",
+      options: []
+    };
+  }
+
+  if (entry.activity === "produce") {
+    return {
+      kind: "checkpoint",
+      activity: "produce",
+      itemKey: entry.itemKey,
+      questionText: item.english,
+      hintText: `Checkpoint ${current}/${total}: type full Tagalog sentence.`,
+      answerText: item.tagalog,
+      speechText: item.tagalog
+    };
+  }
+
+  const decoys = getStudyItems()
+    .filter((candidate) => normalize(candidate.tagalog) !== normalize(item.tagalog))
+    .map((candidate) => candidate.tagalog);
+  const options = [item.tagalog, ...decoys.slice(0, 3)].slice(0, 4);
+  return {
+    kind: "checkpoint",
+    activity: "choice",
+    itemKey: entry.itemKey,
+    questionText: item.english,
+    hintText: `Checkpoint ${current}/${total}: choose the best translation.`,
+    answerText: item.tagalog,
+    options,
+    speechText: item.tagalog
+  };
+}
+
+function renderLearnPrompt(prompt, lesson, queueState) {
+  setPrimaryActionVisible(false);
+  quizOptions.innerHTML = "";
+  quizOptions.classList.add("hidden");
+  typingForm.classList.add("hidden");
+  if (typingSubmitBtn) {
+    typingSubmitBtn.textContent = "Check Sentence";
+  }
+  primaryActionBtn.disabled = false;
+  hideLearnCards();
+  clearSentenceStructureSupport();
+  modeTitle.textContent = "Learn Path";
+
+  if (!prompt) {
+    questionLine.textContent = "No guided prompt available.";
+    promptLine.textContent = "";
+    hintLine.textContent = "";
+    metaLine.textContent = "";
+    pronounceBtn.disabled = true;
+    return;
+  }
+
+  pronounceBtn.disabled = !prompt.speechText;
+  promptLine.textContent = `Learn Path • ${lesson ? lesson.title : "Guided Practice"}`;
+  questionLine.textContent = prompt.questionText || "";
+  hintLine.textContent = prompt.hintText || "";
+  metaLine.textContent = lesson
+    ? `Unit ${lesson.unit} • ${lesson.unitTitle}`
+    : "Guided curriculum";
+
+  if (prompt.kind === "intro") {
+    modeTitle.textContent = "Learn Path • Introduce";
+    setPrimaryActionVisible(true);
+    if (state.answerRevealed) {
+      primaryActionBtn.textContent = "Mark Step Complete";
+      feedbackLine.textContent = `Answer: ${prompt.answerText}`;
+      feedbackLine.className = "feedback-line";
+      hintLine.textContent = prompt.pronunciation ? `Pronunciation: ${prompt.pronunciation}` : prompt.hintText || "";
+    } else {
+      primaryActionBtn.textContent = "Reveal Translation";
+      hintLine.textContent = prompt.hintText || "Try translating to Tagalog before revealing.";
+    }
+    return;
+  }
+
+  if (prompt.kind === "complete") {
+    modeTitle.textContent = "Learn Path • Checkpoint Result";
+    if (checkpointCard) {
+      checkpointCard.classList.remove("hidden");
+      checkpointResultLine.textContent = prompt.resultLine || "Checkpoint complete.";
+      checkpointSummaryLine.textContent = prompt.summaryLine || "";
+    }
+    promptLine.textContent = prompt.title || "Learn Step Complete";
+    setPrimaryActionVisible(true);
+    primaryActionBtn.textContent = "Start Next Lesson";
+    return;
+  }
+
+  const shouldShowStructureCard = prompt.activity !== "produce";
+  if (sentenceBuilderCard && shouldShowStructureCard) {
+    sentenceBuilderCard.classList.remove("hidden");
+    if (sentenceBuilderLabel) {
+      sentenceBuilderLabel.textContent =
+        prompt.kind === "checkpoint"
+          ? "Checkpoint Guide"
+          : prompt.activity === "cloze"
+            ? "Word Breakdown"
+            : "Sentence Builder";
+    }
+    sentenceBuilderType.textContent =
+      prompt.kind === "checkpoint"
+        ? "Unit Checkpoint"
+        : prompt.activity === "reorder"
+          ? "Reorder"
+          : prompt.activity === "cloze"
+            ? "Fill in the blank (Cloze)"
+            : "Prompt-to-Produce";
+    const patternLabel = prompt.patternId ? LEARN_PATTERN_LABELS[prompt.patternId] || "Pattern" : "Checkpoint";
+    sentenceBuilderInstruction.textContent = `${patternLabel} • ${prompt.hintText || ""}`.trim();
+    renderSentenceStructureSupport(prompt);
+  }
+
+  if (prompt.activity === "produce") {
+    modeTitle.textContent = prompt.kind === "checkpoint" ? "Learn Path • Checkpoint" : "Learn Path • Sentence Builder";
+    typingForm.classList.remove("hidden");
+    typingInput.placeholder = "Type full Tagalog sentence...";
+    typingInput.value = "";
+    feedbackLine.textContent = "Type your sentence, then tap Check Sentence.";
+    feedbackLine.className = "feedback-line";
+    return;
+  }
+
+  modeTitle.textContent = prompt.kind === "checkpoint" ? "Learn Path • Checkpoint" : "Learn Path • Sentence Builder";
+  feedbackLine.textContent = "Choose an answer to continue.";
+  feedbackLine.className = "feedback-line";
+  renderLearnOptions(prompt);
+  quizOptions.classList.remove("hidden");
+}
+
+function clearSentenceStructureSupport() {
+  if (sentencePatternGuide) {
+    sentencePatternGuide.textContent = "";
+  }
+  if (sentenceWordMap) {
+    sentenceWordMap.innerHTML = "";
+  }
+}
+
+function renderSentenceStructureSupport(prompt) {
+  if (sentencePatternGuide) {
+    sentencePatternGuide.textContent = buildSentencePatternGuide(prompt);
+  }
+
+  if (!sentenceWordMap) {
+    return;
+  }
+
+  sentenceWordMap.innerHTML = "";
+  const tokens = extractSentenceTokens(prompt?.answerText || "");
+  if (!tokens.length) {
+    return;
+  }
+
+  tokens.forEach((token) => {
+    const chip = document.createElement("span");
+    chip.className = "word-map-chip";
+
+    const tokenSpan = document.createElement("span");
+    tokenSpan.className = "word-map-token";
+    tokenSpan.textContent = token;
+
+    const glossSpan = document.createElement("span");
+    glossSpan.textContent = getTokenGloss(token);
+
+    chip.append(tokenSpan, glossSpan);
+    sentenceWordMap.append(chip);
+  });
+}
+
+function buildSentencePatternGuide(prompt) {
+  if (!prompt) {
+    return "";
+  }
+  if (prompt.patternId === "ako_statement") {
+    return "Structure: [description/action] + ako (I/me).";
+  }
+  if (prompt.patternId === "gusto_need") {
+    return "Structure: gusto/kailangan + ko + object.";
+  }
+  if (prompt.patternId === "nasaan_question") {
+    return "Structure: nasaan (where is) + ang + thing/place?";
+  }
+  if (prompt.patternId === "pwede_request") {
+    return "Structure: pwede + (ba) + request phrase?";
+  }
+  if (prompt.activity === "cloze") {
+    return "Cloze means fill in the missing word to complete the sentence pattern.";
+  }
+  if (prompt.kind === "checkpoint") {
+    return "Checkpoint: use word order and marker words (ang/ng/sa/ba) to choose or build the sentence.";
+  }
+  return "Use the English cue to map each Tagalog word and sentence order.";
+}
+
+function extractSentenceTokens(sentenceText) {
+  return String(sentenceText || "")
+    .split(/\s+/)
+    .map((token) => token.replace(/[.,!?;:()"']/g, "").trim())
+    .filter(Boolean);
+}
+
+function getTokenGloss(token) {
+  const normalized = normalize(token).replace(/\s+/g, "");
+  return TAGALOG_WORD_GLOSSARY[normalized] || "context word";
+}
+
+function renderLearnOptions(prompt) {
+  quizOptions.innerHTML = "";
+  const options = [...(prompt.options || [])];
+  if (!options.some((entry) => normalize(entry) === normalize(prompt.answerText))) {
+    options.unshift(prompt.answerText);
+  }
+  const deduped = [];
+  const seen = new Set();
+  options.forEach((entry) => {
+    const key = normalize(entry);
+    if (!key || seen.has(key)) {
+      return;
+    }
+    seen.add(key);
+    deduped.push(entry);
+  });
+  deduped.forEach((text) => {
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.className = "quiz-option";
+    btn.textContent = text;
+    btn.addEventListener("click", () => handleLearnChoiceAnswer(text, btn));
+    quizOptions.append(btn);
+  });
+}
+
+function handleLearnPrimaryAction() {
+  const prompt = state.learnPrompt;
+  if (!prompt) {
+    return;
+  }
+
+  if (prompt.kind === "intro") {
+    if (!state.answerRevealed) {
+      state.answerRevealed = true;
+      renderLearnPrompt(prompt, getLessonById(prompt.lessonId), progress.curriculum.learnQueueState);
+      return;
+    }
+
+    const item = getItemByKey(prompt.itemKey);
+    if (item) {
+      const stats = ensureItemStats(item);
+      stats.seen += 1;
+      updateStreak();
+      addXp(1);
+      persistProgress();
+    }
+    setNextQuestion();
+    return;
+  }
+
+  if (prompt.kind === "complete") {
+    moveToNextLearnStep(getLessonById(prompt.lessonId));
+    return;
+  }
+
+  if (state.learnAnswered) {
+    setNextQuestion();
+  }
+}
+
+function handleLearnChoiceAnswer(choice, selectedButton) {
+  if (state.learnAnswered || !state.learnPrompt) {
+    return;
+  }
+
+  const prompt = state.learnPrompt;
+  const isCorrect = normalize(choice) === normalize(prompt.answerText);
+  state.learnAnswered = true;
+
+  if (selectedButton) {
+    selectedButton.classList.add(isCorrect ? "quiz-option-correct" : "quiz-option-incorrect");
+  }
+  const buttons = quizOptions.querySelectorAll("button");
+  buttons.forEach((button) => {
+    button.disabled = true;
+    if (normalize(button.textContent || "") === normalize(prompt.answerText)) {
+      button.classList.add("quiz-option-correct");
+    }
+  });
+
+  applyLearnPromptResult(isCorrect);
+}
+
+function handleLearnTypingAnswer() {
+  if (state.learnAnswered || !state.learnPrompt || state.learnPrompt.activity !== "produce") {
+    return;
+  }
+
+  const typed = normalize(typingInput.value);
+  if (!typed) {
+    return;
+  }
+  const isCorrect = typed === normalize(state.learnPrompt.answerText);
+  state.learnAnswered = true;
+  setTypingOutcome(isCorrect);
+  applyLearnPromptResult(isCorrect);
+}
+
+function applyLearnPromptResult(isCorrect) {
+  const prompt = state.learnPrompt;
+  if (!prompt) {
+    return;
+  }
+
+  const item = getItemByKey(prompt.itemKey);
+  if (item) {
+    addScore({
+      correct: isCorrect ? 1 : 0,
+      incorrect: isCorrect ? 0 : 1,
+      xp: isCorrect ? 8 : -3,
+      item,
+      itemCorrect: isCorrect ? 1 : 0,
+      itemIncorrect: isCorrect ? 0 : 1
+    });
+  }
+
+  if (prompt.patternId) {
+    recordPatternAttempt(prompt.patternId, isCorrect);
+  }
+
+  if (prompt.kind === "checkpoint") {
+    const queueState = progress.curriculum.learnQueueState;
+    if (isCorrect) {
+      queueState.checkpointCorrect += 1;
+    } else {
+      queueState.checkpointIncorrect += 1;
+    }
+  }
+
+  if (!isCorrect && (prompt.kind === "builder" || prompt.kind === "checkpoint")) {
+    progress.curriculum.learnQueueState.retryBuffer.push({
+      remainingGap: LEARN_RETRY_GAP,
+      prompt: { ...prompt }
+    });
+  }
+
+  feedbackLine.textContent = isCorrect ? "Nice work. Keep the sentence pattern." : `Correct: ${prompt.answerText}`;
+  feedbackLine.className = `feedback-line ${isCorrect ? "feedback-good" : "feedback-bad"}`;
+  setPrimaryActionVisible(true);
+  primaryActionBtn.textContent = "Continue Lesson";
+  persistProgress();
+  renderStats();
+}
+
+function finalizeLessonCheckpoint(lesson, queueState) {
+  const attempts = queueState.checkpointCorrect + queueState.checkpointIncorrect;
+  const score = attempts ? Math.round((queueState.checkpointCorrect / attempts) * 100) : 0;
+  const passed = score >= UNIT_CHECKPOINT_PASS_PCT;
+  const checkpointEntry = progress.curriculum.checkpointByUnit[String(lesson.unit)];
+  checkpointEntry.attempts += 1;
+  checkpointEntry.lastScore = score;
+  checkpointEntry.bestScore = Math.max(checkpointEntry.bestScore, score);
+  checkpointEntry.passed = checkpointEntry.passed || passed;
+  checkpointEntry.lastAttemptAt = new Date().toISOString();
+
+  const lessonPass = passed && isLessonItemsMastered(lesson) && isLessonPatternsMastered(lesson);
+  setLessonStatus(lesson.id, lessonPass ? "completed" : "in_progress");
+  progress.curriculum.recommendedUnit = getRecommendedUnit();
+
+  return {
+    resultLine: lessonPass
+      ? `Passed: ${score}% (${queueState.checkpointCorrect}/${attempts})`
+      : `Not yet: ${score}% (${queueState.checkpointCorrect}/${attempts})`,
+    summaryLine: lessonPass
+      ? "Checkpoint passed. Sentence patterns are now marked complete for this lesson."
+      : "Review sentence patterns and retry the checkpoint to reach 80%."
+  };
+}
+
+function moveToNextLearnStep(currentLesson) {
+  ensureCurriculumState();
+  if (!currentLesson) {
+    setNextQuestion();
+    return;
+  }
+
+  const currentUnitLessons = getUnitLessons(currentLesson.unit);
+  const nextLesson = currentUnitLessons.find((lesson) => getLessonStatus(lesson.id) !== "completed");
+  if (nextLesson) {
+    resetLearnQueueForLesson(nextLesson);
+    persistProgress();
+    setNextQuestion();
+    return;
+  }
+
+  const nextUnit = getRecommendedUnit();
+  progress.curriculum.activeUnit = nextUnit;
+  progress.curriculum.learnQueueState = createDefaultLearnQueueState();
+  syncLearnUnitSelect();
+  persistProgress();
+  setNextQuestion();
 }

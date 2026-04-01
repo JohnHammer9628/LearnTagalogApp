@@ -82,7 +82,19 @@
         </article>
       </section>
 
-      <section class="controls">
+      <section class="journey-bar" aria-label="Learning journey">
+        <p class="journey-label">Journey</p>
+        <div class="journey-toggle" role="tablist" aria-label="Learning journey">
+          <button class="journey-btn active" data-journey="review" role="tab" aria-selected="true">
+            Review Practice
+          </button>
+          <button class="journey-btn" data-journey="learn" role="tab" aria-selected="false">
+            Learn Path
+          </button>
+        </div>
+      </section>
+
+      <section id="reviewControls" class="controls">
         <div class="control-grid">
           <div class="field">
             <label for="categorySelect">Category</label>
@@ -130,7 +142,7 @@
 
       <section class="study-card">
         <div class="study-tabs">
-          <div class="mode-toggle" role="tablist" aria-label="Study mode">
+          <div id="reviewModeToggle" class="mode-toggle" role="tablist" aria-label="Study mode">
             <button class="mode-btn active" data-mode="flashcard" role="tab" aria-selected="true">
               Flashcards
             </button>
@@ -141,6 +153,21 @@
           </div>
         </div>
         <div class="study-body">
+          <section id="learnHeader" class="learn-header hidden" aria-live="polite">
+            <div class="learn-header-top">
+              <p id="learnUnitTitle" class="learn-unit-title">Unit 1: Foundations</p>
+              <p id="learnProgressText" class="learn-progress-text">Lesson 1 of 3 • 0%</p>
+            </div>
+            <p id="learnRecommendationText" class="learn-recommendation">Recommended next: Unit 1</p>
+            <div class="learn-unit-picker">
+              <label for="learnUnitSelect">Jump to unit</label>
+              <select id="learnUnitSelect" aria-label="Choose guided learn unit">
+                <option value="1">Unit 1: Foundations</option>
+                <option value="2">Unit 2: Conversation</option>
+                <option value="3">Unit 3: Everyday Use</option>
+              </select>
+            </div>
+          </section>
           <div class="study-head">
             <div class="study-head-main">
               <p id="modeTitle" class="mode-title">Flashcards</p>
@@ -172,6 +199,18 @@
           </form>
 
           <p id="feedbackLine" class="feedback-line" aria-live="polite"></p>
+          <section id="sentenceBuilderCard" class="sentence-builder-card hidden" aria-live="polite">
+            <p id="sentenceBuilderLabel" class="sentence-builder-label">Sentence Builder</p>
+            <p id="sentenceBuilderType" class="sentence-builder-type">Reorder</p>
+            <p id="sentenceBuilderInstruction" class="sentence-builder-instruction"></p>
+            <p id="sentencePatternGuide" class="sentence-pattern-guide"></p>
+            <div id="sentenceWordMap" class="sentence-word-map"></div>
+          </section>
+          <section id="checkpointCard" class="checkpoint-card hidden" aria-live="polite">
+            <p class="checkpoint-title">Unit Checkpoint</p>
+            <p id="checkpointResultLine" class="checkpoint-result">In progress</p>
+            <p id="checkpointSummaryLine" class="checkpoint-summary"></p>
+          </section>
           <section id="coachingCard" class="coaching-card hidden" aria-live="polite">
             <p class="coaching-title">Quick Coaching</p>
             <p class="coaching-line"><strong>Correct:</strong> <span id="coachingAnswer"></span></p>
@@ -187,7 +226,7 @@
             </div>
           </section>
 
-          <div class="actions">
+          <div id="actionsBar" class="actions">
             <button id="primaryActionBtn">Reveal Answer</button>
             <button id="nextBtn" class="ghost">Next Card</button>
           </div>

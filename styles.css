@@ -273,6 +273,28 @@ body {
   gap: 1rem;
 }
 
+.journey-bar {
+  margin-top: 1.15rem;
+  padding: 0.72rem 0.86rem;
+  border-radius: 14px;
+  border: 1px solid var(--line);
+  background: rgba(255, 255, 255, 0.78);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.7rem;
+  flex-wrap: wrap;
+}
+
+.journey-label {
+  margin: 0;
+  font-size: 0.76rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #516178;
+  font-weight: 800;
+}
+
 .control-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
@@ -328,6 +350,42 @@ input {
   background: rgba(24, 33, 47, 0.05);
 }
 
+.journey-toggle {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.22rem;
+  min-width: min(360px, 100%);
+  border-radius: 999px;
+  border: 1px solid rgba(24, 33, 47, 0.13);
+  background: rgba(24, 33, 47, 0.05);
+}
+
+.journey-btn {
+  border: 1px solid transparent;
+  background: transparent;
+  color: #516178;
+  border-radius: 999px;
+  padding: 0.46rem 0.78rem;
+  cursor: pointer;
+  font-weight: 800;
+  font-size: 0.86rem;
+  text-align: center;
+  transition: background-color 140ms ease, color 140ms ease, border-color 140ms ease;
+}
+
+.journey-btn:hover {
+  color: #29394e;
+  background: rgba(255, 255, 255, 0.72);
+}
+
+.journey-btn.active {
+  background: #fff;
+  color: #0e6b86;
+  border-color: rgba(14, 107, 134, 0.25);
+}
+
 .mode-btn {
   border: 0;
   background: transparent;
@@ -370,6 +428,56 @@ input {
   padding: 1.32rem 1.35rem;
   display: grid;
   gap: 0.32rem;
+}
+
+.learn-header {
+  margin-bottom: 0.45rem;
+  padding: 0.76rem 0.82rem;
+  border-radius: 12px;
+  border: 1px solid rgba(24, 33, 47, 0.11);
+  background: rgba(255, 255, 255, 0.78);
+  display: grid;
+  gap: 0.35rem;
+}
+
+.learn-header-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 0.7rem;
+  flex-wrap: wrap;
+}
+
+.learn-unit-title {
+  margin: 0;
+  font-weight: 800;
+  color: #2f455f;
+}
+
+.learn-progress-text {
+  margin: 0;
+  font-size: 0.86rem;
+  color: var(--ink-soft);
+  font-weight: 700;
+}
+
+.learn-recommendation {
+  margin: 0;
+  color: #3b6074;
+  font-size: 0.88rem;
+  font-weight: 600;
+}
+
+.learn-unit-picker {
+  display: grid;
+  gap: 0.35rem;
+}
+
+.learn-unit-picker label {
+  font-size: 0.78rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
 }
 
 .study-head {
@@ -558,6 +666,70 @@ input {
 
 .feedback-line:empty {
   display: none;
+}
+
+.sentence-builder-card,
+.checkpoint-card {
+  margin-top: 0.25rem;
+  padding: 0.72rem 0.78rem;
+  border-radius: 12px;
+  border: 1px solid rgba(24, 33, 47, 0.13);
+  background: rgba(255, 255, 255, 0.78);
+}
+
+.sentence-builder-label,
+.checkpoint-title {
+  margin: 0;
+  font-size: 0.78rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #37556a;
+  font-weight: 800;
+}
+
+.sentence-builder-type,
+.checkpoint-result {
+  margin: 0.35rem 0 0;
+  font-weight: 800;
+  color: #2c4258;
+}
+
+.sentence-builder-instruction,
+.checkpoint-summary {
+  margin: 0.3rem 0 0;
+  color: var(--ink-soft);
+  font-size: 0.88rem;
+}
+
+.sentence-pattern-guide {
+  margin: 0.35rem 0 0;
+  color: #355a67;
+  font-size: 0.84rem;
+  font-weight: 700;
+}
+
+.sentence-word-map {
+  margin-top: 0.48rem;
+  display: flex;
+  gap: 0.35rem;
+  flex-wrap: wrap;
+}
+
+.word-map-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  border-radius: 999px;
+  border: 1px solid rgba(24, 33, 47, 0.13);
+  background: #fff;
+  padding: 0.26rem 0.52rem;
+  font-size: 0.78rem;
+  color: #314d62;
+}
+
+.word-map-token {
+  font-weight: 800;
+  color: #1d3448;
 }
 
 .coaching-card {
@@ -1143,6 +1315,19 @@ kbd {
     width: 100%;
   }
 
+  .study-tabs .journey-toggle {
+    width: 100%;
+  }
+
+  .journey-bar {
+    align-items: stretch;
+  }
+
+  .journey-toggle {
+    min-width: 0;
+    width: 100%;
+  }
+
   .study-body {
     padding: 1rem;
   }
@@ -1166,6 +1351,11 @@ kbd {
 
   .badge-list {
     grid-template-columns: 1fr;
+  }
+
+  .learn-header-top {
+    flex-direction: column;
+    align-items: flex-start;
   }
 
   .custom-form-grid-core,
