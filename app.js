@@ -265,6 +265,7 @@ const BASE_ITEMS = [...LESSON_ITEMS, ...CORE_PACK_V2_ITEMS].map((item) => ({
 
 const CURRICULUM_VERSION = 1;
 const LEARN_RETRY_GAP = 2;
+const LEARN_INTRO_LIMIT = 5;
 const LEARN_PATTERN_STREAK_TARGET = 2;
 const UNIT_CHECKPOINT_SIZE = 10;
 const UNIT_CHECKPOINT_PASS_PCT = 80;
@@ -379,6 +380,7 @@ const typingForm = document.getElementById("typingForm");
 const typingSubmitBtn = typingForm ? typingForm.querySelector("button[type='submit']") : null;
 const typingInput = document.getElementById("typingInput");
 const typingResultIcon = document.getElementById("typingResultIcon");
+const hintBtn = document.getElementById("hintBtn");
 const primaryActionBtn = document.getElementById("primaryActionBtn");
 const nextBtn = document.getElementById("nextBtn");
 const actionsBar = document.getElementById("actionsBar");
@@ -454,6 +456,7 @@ const state = {
   answerRevealed: false,
   quizAnswered: false,
   seenTracked: false,
+  hintRequested: false,
   editingCustomId: null,
   learnPrompt: null,
   learnAnswered: false
@@ -579,6 +582,10 @@ function bindEvents() {
     });
   }
 
+  if (hintBtn) {
+    hintBtn.addEventListener("click", requestHintForCurrentPrompt);
+  }
+
   primaryActionBtn.addEventListener("click", handlePrimaryAction);
   nextBtn.addEventListener("click", setNextQuestion);
   endSessionBtn.addEventListener("click", endSession);
@@ -628,6 +635,7 @@ function setNextQuestion() {
     return;
   }
 
+  state.hintRequested = false;
   state.learnPrompt = null;
   state.learnAnswered = false;
   const pool = getFilteredItems();
@@ -643,6 +651,7 @@ function setNextQuestion() {
     hideRatingBar();
     setPrimaryActionVisible(false);
     pronounceBtn.disabled = true;
+    updateHintButton();
     return;
   }
 
@@ -674,7 +683,7 @@ function renderModeLayout() {
 
   promptLine.textContent = prompt.promptLabel;
   questionLine.textContent = prompt.questionText;
-  hintLine.textContent = prompt.hintText;
+  hintLine.textContent = "";
   metaLine.textContent = buildMetaLabel(state.currentItem, { includeCategory: !isChoiceMode(state.mode) });
 
   if (state.mode === "flashcard") {
@@ -684,6 +693,8 @@ function renderModeLayout() {
     pronounceBtn.disabled = false;
     typingForm.classList.add("hidden");
     quizOptions.classList.add("hidden");
+    updateHintButton();
+    applyHintVisibility();
     return;
   }
 
@@ -695,8 +706,10 @@ function renderModeLayout() {
     pronounceBtn.disabled = false;
     typingForm.classList.add("hidden");
     quizOptions.classList.remove("hidden");
-    hintLine.textContent = `Difficulty: ${QUIZ_DIFFICULTY[difficulty]} options`;
+    metaLine.textContent = `${metaLine.textContent} | Quiz: ${QUIZ_DIFFICULTY[difficulty]}`.trim();
     renderQuizOptions(prompt.answerField);
+    updateHintButton();
+    applyHintVisibility();
     return;
   }
 
@@ -711,6 +724,8 @@ function renderModeLayout() {
     prompt.answerField === "tagalog" ? "Type your Tagalog answer..." : "Type your English answer...";
   quizOptions.classList.add("hidden");
   typingForm.classList.remove("hidden");
+  updateHintButton();
+  applyHintVisibility();
 }
 
 function renderQuizOptions(answerField) {
@@ -1064,8 +1079,185 @@ function syncActionBarVisibility() {
   if (!actionsBar) {
     return;
   }
-  const hideActions = primaryActionBtn.hidden && nextBtn.hidden;
+  const hintVisible = Boolean(hintBtn) && !hintBtn.hidden;
+  const hideActions = primaryActionBtn.hidden && nextBtn.hidden && !hintVisible;
   actionsBar.classList.toggle("hidden", hideActions);
+}
+
+function hasHintAvailable() {
+  if (state.journeyMode === LEARN_MODES.learn) {
+    return Boolean(state.learnPrompt) && state.learnPrompt.kind !== "complete";
+  }
+
+  return Boolean(state.currentItem);
+}
+
+function getCurrentHintText() {
+  if (state.journeyMode === LEARN_MODES.learn) {
+    if (!state.learnPrompt) {
+      return "";
+    }
+    return getLearnHintText(state.learnPrompt);
+  }
+
+  if (!state.currentItem) {
+    return "";
+  }
+  return getReviewHintText(state.currentItem);
+}
+
+function updateHintButton() {
+  if (!hintBtn) {
+    return;
+  }
+  const available = hasHintAvailable();
+  hintBtn.hidden = !available;
+  hintBtn.disabled = !available || state.hintRequested;
+  hintBtn.textContent = state.hintRequested ? "Hint Shown" : "Show Hint";
+  syncActionBarVisibility();
+}
+
+function applyHintVisibility() {
+  if (!state.hintRequested) {
+    hintLine.textContent = "";
+    return;
+  }
+  hintLine.textContent = getCurrentHintText();
+}
+
+function requestHintForCurrentPrompt() {
+  if (!hasHintAvailable() || state.hintRequested) {
+    return;
+  }
+  state.hintRequested = true;
+  updateHintButton();
+
+  if (state.journeyMode === LEARN_MODES.learn && state.learnPrompt) {
+    const lesson = getLessonById(state.learnPrompt.lessonId) || getActiveLearnLesson(progress.curriculum.activeUnit);
+    renderLearnPrompt(state.learnPrompt, lesson, progress.curriculum.learnQueueState);
+    return;
+  }
+
+  applyHintVisibility();
+}
+
+function getReviewHintText(item) {
+  const prompt = getPromptConfig(item);
+  const questionText = String(prompt.questionText || "");
+  const hints = [];
+  if (state.direction === "en_to_tl") {
+    hints.push("Translate meaning first, then place marker words naturally.");
+    hints.push(buildEnglishIntentHint(questionText));
+  } else {
+    hints.push("Anchor on key Tagalog markers, then map to English meaning.");
+    hints.push(buildTagalogIntentHint(questionText));
+  }
+  const grammarHint = CATEGORY_GRAMMAR[item.category];
+  if (grammarHint) {
+    hints.push(`Category clue: ${grammarHint}`);
+  }
+  hints.push(buildAnswerShapeHint(prompt.answerText));
+  return compactHintParts(hints);
+}
+
+function getLearnHintText(prompt) {
+  const hints = [];
+
+  if (prompt.activity === "reorder") {
+    hints.push("Order clue: place markers (ang/ng/sa/ba) where they sound grammatical, then arrange content words.");
+  } else if (prompt.activity === "cloze") {
+    hints.push("Cloze clue: decide whether the blank needs a marker particle or a content word.");
+  } else if (prompt.activity === "produce") {
+    hints.push("Production clue: start with intent, then add pronoun/marker/object in natural Tagalog order.");
+  } else {
+    hints.push("Warmup clue: eliminate options with awkward marker placement.");
+  }
+
+  if (prompt.patternId) {
+    hints.push(getPatternHintText(prompt.patternId));
+  } else if (prompt.questionText) {
+    hints.push(buildEnglishIntentHint(prompt.questionText));
+  }
+
+  if (prompt.activity === "cloze") {
+    const token = String(prompt.answerText || "").trim();
+    if (token) {
+      hints.push(`Blank clue: ${token.length} letters, starts with "${token[0].toUpperCase()}".`);
+    }
+  } else if (prompt.activity === "choice") {
+    hints.push("Selection clue: compare marker words and pronoun placement across options.");
+  } else {
+    hints.push(buildAnswerShapeHint(prompt.answerText));
+  }
+
+  return compactHintParts(hints);
+}
+
+function getPatternHintText(patternId) {
+  if (patternId === "ako_statement") {
+    return "Pattern clue: self-statements usually include a 1st-person form (ako/ko).";
+  }
+  if (patternId === "gusto_need") {
+    return "Pattern clue: wants/needs often follow intent -> pronoun -> object pattern.";
+  }
+  if (patternId === "nasaan_question") {
+    return "Pattern clue: location questions often begin with a location question form plus a marker.";
+  }
+  if (patternId === "pwede_request") {
+    return "Pattern clue: requests often include a permission form and may use a question particle.";
+  }
+  return "Pattern clue: watch marker words and sentence intent.";
+}
+
+function buildEnglishIntentHint(text) {
+  const value = String(text || "").toLowerCase();
+  if (/^where\b/.test(value)) {
+    return "Intent clue: this is asking for location.";
+  }
+  if (/^how much\b/.test(value)) {
+    return "Intent clue: this is a price/cost question.";
+  }
+  if (/^can (you|i)\b/.test(value)) {
+    return "Intent clue: this is a request or permission question.";
+  }
+  if (/^i (am|need|want|like)\b|^i'm\b/.test(value)) {
+    return "Intent clue: this is a first-person statement.";
+  }
+  if (/^do you\b|^is\b|^are\b/.test(value)) {
+    return "Intent clue: this is a yes/no style question.";
+  }
+  return "Intent clue: identify whether this is a statement, request, or question.";
+}
+
+function buildTagalogIntentHint(text) {
+  const value = normalize(String(text || ""));
+  if (value.startsWith("nasaan")) {
+    return "Intent clue: this phrase asks for location.";
+  }
+  if (value.includes(" ba ")) {
+    return "Intent clue: the particle suggests a yes/no style question.";
+  }
+  if (value.includes(" ako ") || value.endsWith(" ako")) {
+    return "Intent clue: first-person statement about self.";
+  }
+  return "Intent clue: use markers and particles to infer sentence purpose.";
+}
+
+function buildAnswerShapeHint(answerText) {
+  const tokens = extractSentenceTokens(answerText);
+  if (!tokens.length) {
+    return "Shape clue: short answer.";
+  }
+  const first = tokens[0];
+  return `Shape clue: ${tokens.length} word${tokens.length === 1 ? "" : "s"}, starts with "${first[0].toUpperCase()}".`;
+}
+
+function compactHintParts(parts) {
+  return parts
+    .map((entry) => String(entry || "").trim())
+    .filter(Boolean)
+    .slice(0, 3)
+    .join(" ");
 }
 
 function disableQuizOptions() {
@@ -2685,6 +2877,8 @@ function toggleJourneyLayout() {
     state.learnAnswered = false;
   }
   syncActionBarVisibility();
+  updateHintButton();
+  applyHintVisibility();
   updateLearnHeader();
 }
 
@@ -2797,9 +2991,12 @@ function resetLearnQueueForLesson(lesson) {
   const queueState = createDefaultLearnQueueState();
   queueState.lessonId = lesson.id;
   queueState.phase = "introduce";
-  queueState.introOrder = lessonItems.map((item) => itemKey(item));
+  queueState.introOrder = lessonItems.slice(0, LEARN_INTRO_LIMIT).map((item) => itemKey(item));
   queueState.builderDrills = buildSentenceDrills(lesson, lessonItems);
   queueState.checkpointOrder = buildCheckpointOrder(lesson.unit);
+  if (!queueState.introOrder.length) {
+    queueState.phase = "builder";
+  }
   progress.curriculum.learnQueueState = queueState;
 }
 
@@ -2820,15 +3017,24 @@ function tickRetryBufferAndShiftReady(queueState) {
 
 function buildSentenceDrills(lesson, lessonItems) {
   const drills = [];
-  lesson.patterns.forEach((patternId, patternIdx) => {
+  lesson.patterns.forEach((patternId) => {
     const sentencePool = getPatternSentencePool(patternId, lessonItems, getUnitItems(lesson.unit));
     if (!sentencePool.length) {
       return;
     }
-    const picked = sentencePool[patternIdx % sentencePool.length];
-    drills.push({ patternId, activity: "reorder", sentence: picked });
-    drills.push({ patternId, activity: "cloze", sentence: picked });
-    drills.push({ patternId, activity: "produce", sentence: picked });
+    const selectedSentences = sentencePool.slice(0, Math.min(4, sentencePool.length));
+    if (selectedSentences.length === 1) {
+      const only = selectedSentences[0];
+      drills.push({ patternId, activity: "reorder", sentence: only });
+      drills.push({ patternId, activity: "cloze", sentence: only });
+      drills.push({ patternId, activity: "produce", sentence: only });
+      return;
+    }
+
+    selectedSentences.forEach((sentence, idx) => {
+      const activity = idx % 3 === 0 ? "reorder" : idx % 3 === 1 ? "cloze" : "produce";
+      drills.push({ patternId, activity, sentence });
+    });
   });
   return drills;
 }
@@ -2911,11 +3117,15 @@ function getItemByKey(key) {
 }
 
 function isLessonItemsMastered(lesson) {
-  const lessonItems = getLessonItems(lesson);
+  const lessonItems = getLessonItems(lesson).slice(0, LEARN_INTRO_LIMIT);
   if (!lessonItems.length) {
     return true;
   }
-  return lessonItems.every((item) => getItemStats(item).seen > 0);
+  return lessonItems.every((item) => {
+    const stats = getItemStats(item);
+    const attempts = stats.correct + stats.incorrect;
+    return stats.seen > 0 || attempts > 0;
+  });
 }
 
 function isLessonPatternsMastered(lesson) {
@@ -2950,6 +3160,7 @@ function setNextLearnQuestion() {
   state.seenTracked = false;
   state.quizAnswered = false;
   state.answerRevealed = false;
+  state.hintRequested = false;
 
   const unit = getCurriculumUnit(progress.curriculum.activeUnit);
   const lesson = getActiveLearnLesson(unit.unit);
@@ -2984,17 +3195,7 @@ function setNextLearnQuestion() {
         queueState.introCursor += 1;
         const item = getItemByKey(nextKey);
         if (item) {
-          prompt = {
-            kind: "intro",
-            activity: "intro",
-            lessonId: lesson.id,
-            itemKey: nextKey,
-            questionText: item.english,
-            answerText: item.tagalog,
-            hintText: "Try translating to Tagalog before revealing.",
-            pronunciation: item.pronunciation || "",
-            speechText: item.tagalog
-          };
+          prompt = buildIntroPrompt(item, lesson, queueState.introCursor, queueState.introOrder.length);
         }
       } else {
         queueState.phase = "builder";
@@ -3120,6 +3321,52 @@ function buildSentenceDrillPrompt(drill) {
   };
 }
 
+function buildIntroPrompt(item, lesson, stepIndex, stepTotal) {
+  const isProduction = stepIndex % 3 === 0;
+  if (isProduction) {
+    return {
+      kind: "intro",
+      activity: "produce",
+      lessonId: lesson.id,
+      itemKey: itemKey(item),
+      questionText: item.english,
+      hintText: `Warmup ${stepIndex}/${stepTotal}: type the full Tagalog translation.`,
+      answerText: item.tagalog,
+      speechText: item.tagalog
+    };
+  }
+
+  const lessonDecoys = getLessonItems(lesson)
+    .filter((candidate) => itemKey(candidate) !== itemKey(item))
+    .map((candidate) => candidate.tagalog);
+  const globalDecoys = getStudyItems()
+    .filter((candidate) => normalize(candidate.tagalog) !== normalize(item.tagalog))
+    .map((candidate) => candidate.tagalog);
+  const options = [item.tagalog, ...lessonDecoys, ...globalDecoys];
+  const deduped = [];
+  const seen = new Set();
+  options.forEach((entry) => {
+    const key = normalize(entry);
+    if (!key || seen.has(key)) {
+      return;
+    }
+    seen.add(key);
+    deduped.push(entry);
+  });
+
+  return {
+    kind: "intro",
+    activity: "choice",
+    lessonId: lesson.id,
+    itemKey: itemKey(item),
+    questionText: item.english,
+    hintText: `Warmup ${stepIndex}/${stepTotal}: choose the best translation.`,
+    answerText: item.tagalog,
+    options: deduped.slice(0, 4),
+    speechText: item.tagalog
+  };
+}
+
 function buildCheckpointPrompt(entry, current, total) {
   const item = getItemByKey(entry.itemKey);
   if (!item) {
@@ -3180,29 +3427,39 @@ function renderLearnPrompt(prompt, lesson, queueState) {
     hintLine.textContent = "";
     metaLine.textContent = "";
     pronounceBtn.disabled = true;
+    updateHintButton();
     return;
   }
 
   pronounceBtn.disabled = !prompt.speechText;
   promptLine.textContent = `Learn Path • ${lesson ? lesson.title : "Guided Practice"}`;
   questionLine.textContent = prompt.questionText || "";
-  hintLine.textContent = prompt.hintText || "";
+  hintLine.textContent = "";
   metaLine.textContent = lesson
     ? `Unit ${lesson.unit} • ${lesson.unitTitle}`
     : "Guided curriculum";
 
   if (prompt.kind === "intro") {
-    modeTitle.textContent = "Learn Path • Introduce";
-    setPrimaryActionVisible(true);
-    if (state.answerRevealed) {
-      primaryActionBtn.textContent = "Mark Step Complete";
-      feedbackLine.textContent = `Answer: ${prompt.answerText}`;
+    modeTitle.textContent = "Learn Path • Warmup";
+    hintLine.textContent = prompt.hintText || "Warmup step.";
+
+    if (prompt.activity === "produce") {
+      typingForm.classList.remove("hidden");
+      typingInput.placeholder = "Type full Tagalog translation...";
+      typingInput.value = "";
+      feedbackLine.textContent = "Warmup: answer first, then continue.";
       feedbackLine.className = "feedback-line";
-      hintLine.textContent = prompt.pronunciation ? `Pronunciation: ${prompt.pronunciation}` : prompt.hintText || "";
-    } else {
-      primaryActionBtn.textContent = "Reveal Translation";
-      hintLine.textContent = prompt.hintText || "Try translating to Tagalog before revealing.";
+      updateHintButton();
+      applyHintVisibility();
+      return;
     }
+
+    feedbackLine.textContent = "Warmup: choose an answer to continue.";
+    feedbackLine.className = "feedback-line";
+    renderLearnOptions(prompt);
+    quizOptions.classList.remove("hidden");
+    updateHintButton();
+    applyHintVisibility();
     return;
   }
 
@@ -3216,10 +3473,12 @@ function renderLearnPrompt(prompt, lesson, queueState) {
     promptLine.textContent = prompt.title || "Learn Step Complete";
     setPrimaryActionVisible(true);
     primaryActionBtn.textContent = "Start Next Lesson";
+    updateHintButton();
+    applyHintVisibility();
     return;
   }
 
-  const shouldShowStructureCard = prompt.activity !== "produce";
+  const shouldShowStructureCard = state.hintRequested && prompt.kind !== "intro" && prompt.activity !== "produce";
   if (sentenceBuilderCard && shouldShowStructureCard) {
     sentenceBuilderCard.classList.remove("hidden");
     if (sentenceBuilderLabel) {
@@ -3250,6 +3509,8 @@ function renderLearnPrompt(prompt, lesson, queueState) {
     typingInput.value = "";
     feedbackLine.textContent = "Type your sentence, then tap Check Sentence.";
     feedbackLine.className = "feedback-line";
+    updateHintButton();
+    applyHintVisibility();
     return;
   }
 
@@ -3258,6 +3519,8 @@ function renderLearnPrompt(prompt, lesson, queueState) {
   feedbackLine.className = "feedback-line";
   renderLearnOptions(prompt);
   quizOptions.classList.remove("hidden");
+  updateHintButton();
+  applyHintVisibility();
 }
 
 function clearSentenceStructureSupport() {
@@ -3279,7 +3542,7 @@ function renderSentenceStructureSupport(prompt) {
   }
 
   sentenceWordMap.innerHTML = "";
-  const tokens = extractSentenceTokens(prompt?.answerText || "");
+  const tokens = getHintSupportTokens(prompt);
   if (!tokens.length) {
     return;
   }
@@ -3298,6 +3561,50 @@ function renderSentenceStructureSupport(prompt) {
     chip.append(tokenSpan, glossSpan);
     sentenceWordMap.append(chip);
   });
+}
+
+function getHintSupportTokens(prompt) {
+  if (!prompt) {
+    return [];
+  }
+
+  const tokens = [];
+  const seen = new Set();
+  const addToken = (token) => {
+    const value = String(token || "").trim();
+    if (!value || value === "___") {
+      return;
+    }
+    const key = normalize(value);
+    if (!key || seen.has(key)) {
+      return;
+    }
+    seen.add(key);
+    tokens.push(value);
+  };
+  const addFromText = (text) => {
+    extractSentenceTokens(text).forEach(addToken);
+  };
+
+  if (prompt.activity === "cloze") {
+    const visibleStem = String(prompt.questionText || "").split("(")[0];
+    addFromText(visibleStem);
+    (prompt.options || []).forEach(addFromText);
+    return tokens.slice(0, 12);
+  }
+
+  if (prompt.kind === "checkpoint" && prompt.activity === "choice") {
+    (prompt.options || []).forEach(addFromText);
+    return tokens.slice(0, 12);
+  }
+
+  if (prompt.activity === "reorder" && Array.isArray(prompt.options) && prompt.options.length) {
+    addFromText(prompt.options[0]);
+    return tokens.slice(0, 12);
+  }
+
+  addFromText(prompt.answerText || "");
+  return tokens.slice(0, 12);
 }
 
 function buildSentencePatternGuide(prompt) {
@@ -3369,25 +3676,6 @@ function handleLearnPrimaryAction() {
     return;
   }
 
-  if (prompt.kind === "intro") {
-    if (!state.answerRevealed) {
-      state.answerRevealed = true;
-      renderLearnPrompt(prompt, getLessonById(prompt.lessonId), progress.curriculum.learnQueueState);
-      return;
-    }
-
-    const item = getItemByKey(prompt.itemKey);
-    if (item) {
-      const stats = ensureItemStats(item);
-      stats.seen += 1;
-      updateStreak();
-      addXp(1);
-      persistProgress();
-    }
-    setNextQuestion();
-    return;
-  }
-
   if (prompt.kind === "complete") {
     moveToNextLearnStep(getLessonById(prompt.lessonId));
     return;
@@ -3444,6 +3732,10 @@ function applyLearnPromptResult(isCorrect) {
 
   const item = getItemByKey(prompt.itemKey);
   if (item) {
+    const seenStats = ensureItemStats(item);
+    seenStats.seen += 1;
+  }
+  if (item) {
     addScore({
       correct: isCorrect ? 1 : 0,
       incorrect: isCorrect ? 0 : 1,
@@ -3467,7 +3759,7 @@ function applyLearnPromptResult(isCorrect) {
     }
   }
 
-  if (!isCorrect && (prompt.kind === "builder" || prompt.kind === "checkpoint")) {
+  if (!isCorrect && (prompt.kind === "builder" || prompt.kind === "checkpoint" || prompt.kind === "intro")) {
     progress.curriculum.learnQueueState.retryBuffer.push({
       remainingGap: LEARN_RETRY_GAP,
       prompt: { ...prompt }
